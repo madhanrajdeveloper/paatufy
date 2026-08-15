@@ -1,0 +1,100 @@
+# ---------------------------------------------------------
+# Miscellaneous & Operating System Files
+# ---------------------------------------------------------
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# ---------------------------------------------------------
+# IDEs and Editors
+# ---------------------------------------------------------
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# ---------------------------------------------------------
+# Flutter / Dart / Pub Engine
+# ---------------------------------------------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+/coverage/
+**/doc/api/
+*.lock.db
+
+# Symbolication & Obfuscation
+app.*.symbols
+app.*.map.json
+
+# ---------------------------------------------------------
+# Android Specific Artifacts
+# ---------------------------------------------------------
+**/android/.gradle/
+**/android/captures/
+**/android/local.properties
+**/android/key.properties
+**/android/app/local.properties
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
+**/android/**/GeneratedPluginRegistrant.java
+**/android/**/GeneratedPluginRegistrant.kt
+
+# Keystores & Security
+*.keystore
+*.jks
+*.p8
+*.p12
+
+# ---------------------------------------------------------
+# iOS / macOS Specific Artifacts
+# ---------------------------------------------------------
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/**/GeneratedPluginRegistrant.h
+**/ios/**/GeneratedPluginRegistrant.m
+**/ios/**/GeneratedPluginRegistrant.swift
+**/ios/**/Pods/
+*.xcworkspace/
+*.xcuserdatad/
+*.xcuserstate
+
+# ---------------------------------------------------------
+# Environment & Secret Files
+# ---------------------------------------------------------
+.env
+*.env
+.env.*
