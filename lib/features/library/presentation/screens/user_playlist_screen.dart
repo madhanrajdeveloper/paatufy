@@ -15,6 +15,22 @@ class UserPlaylistScreen extends ConsumerWidget {
 
   const UserPlaylistScreen({super.key, required this.playlistId});
 
+  String _formatTotalDuration(List<Song> songs) {
+    final totalSeconds = songs.fold<int>(0, (sum, song) => sum + song.durationSeconds);
+    if (totalSeconds <= 0) return '';
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return '$hours hr ${minutes > 0 ? '$minutes min' : ''}'.trim();
+    } else if (minutes > 0) {
+      return '$minutes min ${seconds > 0 ? '$seconds sec' : ''}'.trim();
+    } else {
+      return '$seconds sec';
+    }
+  }
+
   void _showDeletePlaylistDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -62,6 +78,7 @@ class UserPlaylistScreen extends ConsumerWidget {
           final tracks = playlist.songs;
           final bool isThisListPlaying = tracks.any((s) => s.id == currentSong?.id);
           final bool isCurrentlyPlaying = isThisListPlaying && isPlaying;
+          final String durationString = _formatTotalDuration(tracks);
 
           return CustomScrollView(
             slivers: [
@@ -127,7 +144,12 @@ class UserPlaylistScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(playlist.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                            Text('${tracks.length} Songs', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+                            Text(
+                              durationString.isNotEmpty
+                                  ? '${tracks.length} Songs • $durationString'
+                                  : '${tracks.length} Songs',
+                              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                            ),
                           ],
                         ),
                       ),

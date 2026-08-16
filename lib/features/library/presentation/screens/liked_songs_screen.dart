@@ -12,6 +12,22 @@ import 'package:paatufy/models/song.dart';
 class LikedSongsScreen extends ConsumerWidget {
   const LikedSongsScreen({super.key});
 
+  String _formatTotalDuration(List<Song> songs) {
+    final totalSeconds = songs.fold<int>(0, (sum, song) => sum + song.durationSeconds);
+    if (totalSeconds <= 0) return '';
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return '$hours hr ${minutes > 0 ? '$minutes min' : ''}'.trim();
+    } else if (minutes > 0) {
+      return '$minutes min ${seconds > 0 ? '$seconds sec' : ''}'.trim();
+    } else {
+      return '$seconds sec';
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final audioHandler = ref.watch(audioHandlerProvider);
@@ -27,6 +43,7 @@ class LikedSongsScreen extends ConsumerWidget {
           final likedSongs = box.values.toList().reversed.toList();
           final bool isThisListPlaying = likedSongs.any((s) => s.id == currentSong?.id);
           final bool isCurrentlyPlaying = isThisListPlaying && isPlaying;
+          final String durationString = _formatTotalDuration(likedSongs);
 
           return CustomScrollView(
             slivers: [
@@ -73,7 +90,7 @@ class LikedSongsScreen extends ConsumerWidget {
                 ),
               ),
 
-              // Track Counter, Shuffle & Play Actions
+              // Track Counter, Total Duration, Shuffle & Play Actions
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -89,14 +106,16 @@ class LikedSongsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${likedSongs.length} Songs',
+                              durationString.isNotEmpty
+                                  ? '${likedSongs.length} Songs • $durationString'
+                                  : '${likedSongs.length} Songs',
                               style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                             ),
                           ],
                         ),
                       ),
 
-                      // Shuffle Button: Starts from a random liked track & enables continuous shuffle
+                      // Shuffle Button
                       IconButton(
                         icon: Icon(
                           Icons.shuffle_rounded,
@@ -113,7 +132,7 @@ class LikedSongsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 8),
 
-                      // Main Play/Pause Button
+                      // Play/Pause Button
                       CircleAvatar(
                         radius: 28,
                         backgroundColor: const Color(0xFF22C55E),
