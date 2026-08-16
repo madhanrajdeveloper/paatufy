@@ -21,11 +21,10 @@ void main() async {
       androidNotificationChannelName: 'Paatufy Playback',
       androidNotificationOngoing: true,
       androidStopForegroundOnPause: true,
-      androidNotificationIcon: 'mipmap/launcher_icon',
+      androidNotificationIcon: 'drawable/ic_stat_music',
     ),
   );
 
-  // Hook on-demand stream URL resolver for search results
   final jioSaavnProvider = JioSaavnProvider(Dio());
   audioHandler.streamResolver = (song) => jioSaavnProvider.resolveSongStreamUrl(
         song.providerId,

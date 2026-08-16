@@ -7,12 +7,14 @@ import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
 import 'package:paatufy/features/audio/data/audio_handler.dart';
 import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
+import 'package:paatufy/features/library/presentation/screens/user_playlist_screen.dart';
 import 'package:paatufy/features/profile/presentation/screens/profile_screen.dart';
 import 'package:paatufy/features/profile/presentation/screens/settings_screen.dart';
 import 'package:paatufy/features/search/presentation/screens/entity_detail_screen.dart';
 import 'package:paatufy/features/search/presentation/screens/search_screen.dart';
 import 'package:paatufy/models/search_result.dart';
 import 'package:paatufy/models/song.dart';
+import 'package:paatufy/models/user_playlist.dart';
 
 final List<String> _tamilSeeds = [
   'Latest Tamil Hits',
@@ -258,7 +260,7 @@ class HomeScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
         children: [
-          // 1. Recently Played (Songs, Albums & Playlists with 6-Hour Auto-Reset)
+          // 1. Recently Played Shelf (6-Hour TTL)
           ValueListenableBuilder(
             valueListenable: HiveService.getRecentlyPlayed().listenable(),
             builder: (context, Box<String> box, _) {
@@ -337,7 +339,70 @@ class HomeScreen extends ConsumerWidget {
             },
           ),
 
-          // 2. Dynamic Tamil & English Recommendations Feed
+          // 2. Your Playlists Shelf (Custom User Playlists on Home)
+          ValueListenableBuilder<Box<String>>(
+            valueListenable: HiveService.getUserPlaylists().listenable(),
+            builder: (context, box, _) {
+              final userPlaylists = HiveService.getUserPlaylistsList();
+              if (userPlaylists.isEmpty) return const SizedBox.shrink();
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Your Playlists', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 175,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: userPlaylists.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (context, index) {
+                        final playlist = userPlaylists[index];
+                        return GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => UserPlaylistScreen(playlistId: playlist.id)),
+                          ),
+                          child: SizedBox(
+                            width: 115,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: playlist.artworkUrl != null
+                                      ? CachedNetworkImage(imageUrl: playlist.artworkUrl!, width: 115, height: 115, fit: BoxFit.cover)
+                                      : Container(
+                                          width: 115,
+                                          height: 115,
+                                          decoration: const BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [Color(0xFF15803D), Color(0xFF22C55E)],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ),
+                                          ),
+                                          child: const Icon(Icons.queue_music_rounded, color: Colors.white, size: 40),
+                                        ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(playlist.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                Text('${playlist.songs.length} songs', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                ],
+              );
+            },
+          ),
+
+          // 3. Dynamic Recommendations Feed
           discovery.when(
             data: (data) {
               final quickPicks = data['quickPicks'] as List<Song>;
@@ -348,7 +413,6 @@ class HomeScreen extends ConsumerWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Quick Picks
                   if (quickPicks.isNotEmpty) ...[
                     const Text('Quick Picks • Tamil & English', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
@@ -397,7 +461,6 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 28),
                   ],
 
-                  // New & Trending Albums
                   if (trendingAlbums.isNotEmpty) ...[
                     const Text('New Albums • Tamil & English', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 14),
@@ -446,7 +509,6 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 28),
                   ],
 
-                  // Top Artists
                   if (topArtists.isNotEmpty) ...[
                     const Text('Popular Artists', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 14),
@@ -499,7 +561,6 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 28),
                   ],
 
-                  // Daily Mixes
                   if (dailyMixes.isNotEmpty) ...[
                     const Text('Made For You • Tamil & English', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 14),

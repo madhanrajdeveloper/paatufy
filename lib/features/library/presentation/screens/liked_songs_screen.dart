@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,12 +24,13 @@ class LikedSongsScreen extends ConsumerWidget {
       body: ValueListenableBuilder<Box<Song>>(
         valueListenable: HiveService.getLikedSongs().listenable(),
         builder: (context, Box<Song> box, _) {
-          final List<Song> likedSongs = box.values.toList().reversed.toList();
+          final likedSongs = box.values.toList().reversed.toList();
           final bool isThisListPlaying = likedSongs.any((s) => s.id == currentSong?.id);
           final bool isCurrentlyPlaying = isThisListPlaying && isPlaying;
 
           return CustomScrollView(
             slivers: [
+              // Gradient Header
               SliverAppBar(
                 expandedHeight: 260,
                 pinned: true,
@@ -38,34 +40,40 @@ class LikedSongsScreen extends ConsumerWidget {
                   onPressed: () => Navigator.pop(context),
                 ),
                 flexibleSpace: FlexibleSpaceBar(
-                  title: const Text('Liked Songs', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  background: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF450AF5), AppTheme.background],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: 110,
-                        height: 110,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF5B4BDB), AppTheme.primary],
+                  title: const Text(
+                    'Liked Songs',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  background: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF4A148C), Color(0xFF22C55E)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 16)],
                         ),
-                        child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 54),
+                        child: const Center(
+                          child: Icon(Icons.favorite_rounded, color: Colors.white, size: 80),
+                        ),
                       ),
-                    ),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, AppTheme.background.withOpacity(0.95)],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
+
+              // Track Counter, Shuffle & Play Actions
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -75,28 +83,40 @@ class LikedSongsScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Liked Songs', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                            Text('${likedSongs.length} Songs', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+                            const Text(
+                              'Liked Songs',
+                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${likedSongs.length} Songs',
+                              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                            ),
                           ],
                         ),
                       ),
+
+                      // Shuffle Button: Starts from a random liked track & enables continuous shuffle
                       IconButton(
                         icon: Icon(
                           Icons.shuffle_rounded,
-                          color: isShuffle ? AppTheme.primary : AppTheme.textSecondary,
+                          color: isShuffle ? const Color(0xFF22C55E) : AppTheme.textSecondary,
                           size: 26,
                         ),
                         onPressed: () {
                           if (likedSongs.isNotEmpty) {
+                            final randomIndex = Random().nextInt(likedSongs.length);
                             if (!isShuffle) audioHandler.toggleShuffle();
-                            audioHandler.playQueue(likedSongs, initialIndex: 0);
+                            audioHandler.playQueue(likedSongs, initialIndex: randomIndex);
                           }
                         },
                       ),
                       const SizedBox(width: 8),
+
+                      // Main Play/Pause Button
                       CircleAvatar(
                         radius: 28,
-                        backgroundColor: AppTheme.primary,
+                        backgroundColor: const Color(0xFF22C55E),
                         child: IconButton(
                           icon: Icon(
                             isCurrentlyPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
@@ -119,6 +139,8 @@ class LikedSongsScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+
+              // Liked Songs List
               if (likedSongs.isEmpty)
                 const SliverFillRemaining(
                   child: Center(
@@ -127,7 +149,10 @@ class LikedSongsScreen extends ConsumerWidget {
                       children: [
                         Icon(Icons.favorite_border_rounded, size: 64, color: AppTheme.textSecondary),
                         SizedBox(height: 16),
-                        Text('Songs you like will appear here', style: TextStyle(color: AppTheme.textSecondary)),
+                        Text(
+                          'No liked songs yet',
+                          style: TextStyle(color: AppTheme.textSecondary, fontSize: 15),
+                        ),
                       ],
                     ),
                   ),
@@ -144,35 +169,41 @@ class LikedSongsScreen extends ConsumerWidget {
                         leading: ClipRRect(
                           borderRadius: BorderRadius.circular(4),
                           child: song.artworkUrl != null
-                              ? CachedNetworkImage(imageUrl: song.artworkUrl!, width: 48, height: 48, fit: BoxFit.cover)
-                              : Container(width: 48, height: 48, color: AppTheme.surfaceElevated),
+                              ? CachedNetworkImage(
+                                  imageUrl: song.artworkUrl!,
+                                  width: 48,
+                                  height: 48,
+                                  fit: BoxFit.cover,
+                                )
+                              : Container(
+                                  width: 48,
+                                  height: 48,
+                                  color: AppTheme.surfaceElevated,
+                                  child: const Icon(Icons.music_note_rounded, color: AppTheme.textSecondary),
+                                ),
                         ),
                         title: Text(
                           song.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: isCurrentTrack ? AppTheme.primary : AppTheme.textPrimary,
+                            color: isCurrentTrack ? const Color(0xFF22C55E) : AppTheme.textPrimary,
                             fontWeight: isCurrentTrack ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
-                        subtitle: Row(
-                          children: [
-                            const Icon(Icons.favorite_rounded, color: AppTheme.primary, size: 12),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                song.artist,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                              ),
-                            ),
-                          ],
+                        subtitle: Text(
+                          song.artist,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            IconButton(
+                              icon: const Icon(Icons.favorite_rounded, color: Color(0xFF22C55E), size: 22),
+                              onPressed: () => HiveService.toggleLikeSong(song),
+                            ),
                             IconButton(
                               icon: const Icon(Icons.more_vert_rounded, color: AppTheme.textSecondary, size: 20),
                               onPressed: () => SongOptionsModal.show(context, song, audioHandler),
@@ -180,7 +211,7 @@ class LikedSongsScreen extends ConsumerWidget {
                             IconButton(
                               icon: Icon(
                                 (isCurrentTrack && isPlaying) ? Icons.equalizer_rounded : Icons.play_arrow_rounded,
-                                color: isCurrentTrack ? AppTheme.primary : AppTheme.textSecondary,
+                                color: isCurrentTrack ? const Color(0xFF22C55E) : AppTheme.textSecondary,
                                 size: 24,
                               ),
                               onPressed: () => audioHandler.playQueue(likedSongs, initialIndex: index),
