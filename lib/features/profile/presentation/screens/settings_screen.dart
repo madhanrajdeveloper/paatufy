@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
 
@@ -26,33 +27,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        title: Text(
+          'Settings',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: AppTheme.textPrimary,
+          ),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         children: [
           // Audio Quality
-          const Text('Audio Quality', style: TextStyle(color: Color(0xFF22C55E), fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            'Audio Quality',
+            style: GoogleFonts.poppins(
+              color: const Color(0xFF22C55E),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
           const SizedBox(height: 8),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Streaming Quality', style: TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text(_streamingQuality, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+            title: Text(
+              'Streaming Quality',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            subtitle: Text(
+              _streamingQuality,
+              style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
+            ),
             trailing: PopupMenuButton<String>(
               color: AppTheme.surfaceElevated,
               initialValue: _streamingQuality,
               onSelected: (val) => setState(() => _streamingQuality = val),
               itemBuilder: (context) => [
-                const PopupMenuItem(value: 'Auto', child: Text('Auto', style: TextStyle(color: Colors.white))),
-                const PopupMenuItem(value: 'Normal (160kbps)', child: Text('Normal (160kbps)', style: TextStyle(color: Colors.white))),
-                const PopupMenuItem(value: 'High (320kbps)', child: Text('High (320kbps)', style: TextStyle(color: Colors.white))),
+                PopupMenuItem(
+                  value: 'Auto',
+                  child: Text('Auto', style: GoogleFonts.poppins(color: Colors.white, fontSize: 13)),
+                ),
+                PopupMenuItem(
+                  value: 'Normal (160kbps)',
+                  child: Text('Normal (160kbps)', style: GoogleFonts.poppins(color: Colors.white, fontSize: 13)),
+                ),
+                PopupMenuItem(
+                  value: 'High (320kbps)',
+                  child: Text('High (320kbps)', style: GoogleFonts.poppins(color: Colors.white, fontSize: 13)),
+                ),
               ],
               child: const Icon(Icons.arrow_drop_down_rounded, color: AppTheme.textPrimary, size: 28),
             ),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Stream only on Wi-Fi', style: TextStyle(fontWeight: FontWeight.w600)),
+            title: Text(
+              'Stream only on Wi-Fi',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
             value: _streamOnWifiOnly,
             activeColor: const Color(0xFF22C55E),
             onChanged: (val) => setState(() => _streamOnWifiOnly = val),
@@ -60,20 +93,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(color: AppTheme.divider, height: 28),
 
           // Playback Settings
-          const Text('Playback', style: TextStyle(color: Color(0xFF22C55E), fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            'Playback',
+            style: GoogleFonts.poppins(
+              color: const Color(0xFF22C55E),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
           const SizedBox(height: 8),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Gapless Playback', style: TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: const Text('Seamless transitions between songs', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+            title: Text(
+              'Gapless Playback',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            subtitle: Text(
+              'Seamless transitions between songs',
+              style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
+            ),
             value: _gaplessPlayback,
             activeColor: const Color(0xFF22C55E),
             onChanged: (val) => setState(() => _gaplessPlayback = val),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Normalize Volume', style: TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: const Text('Set the same volume level for all tracks', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+            title: Text(
+              'Normalize Volume',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            subtitle: Text(
+              'Set the same volume level for all tracks',
+              style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
+            ),
             value: _normalizeVolume,
             activeColor: const Color(0xFF22C55E),
             onChanged: (val) => setState(() => _normalizeVolume = val),
@@ -81,29 +133,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(color: AppTheme.divider, height: 28),
 
           // Storage & Cache
-          const Text('Storage & Cache', style: TextStyle(color: Color(0xFF22C55E), fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            'Storage & Cache',
+            style: GoogleFonts.poppins(
+              color: const Color(0xFF22C55E),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
           const SizedBox(height: 8),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Clear Search History', style: TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: const Text('Remove all stored recent queries', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+            title: Text(
+              'Clear Search History',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            subtitle: Text(
+              'Remove all stored recent queries',
+              style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
+            ),
             trailing: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
             onTap: () {
               HiveService.getRecentSearches().clear();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Search history cleared'), duration: Duration(seconds: 1)),
+                SnackBar(
+                  content: Text('Search history cleared', style: GoogleFonts.poppins()),
+                  duration: const Duration(seconds: 1),
+                ),
               );
             },
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Clear Recently Played', style: TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: const Text('Reset the 6-hour playback shelf', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+            title: Text(
+              'Clear Recently Played',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            subtitle: Text(
+              'Reset the 6-hour playback shelf',
+              style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
+            ),
             trailing: const Icon(Icons.history_toggle_off_rounded, color: Colors.redAccent),
             onTap: () {
               HiveService.getRecentlyPlayed().clear();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Recently played cleared'), duration: Duration(seconds: 1)),
+                SnackBar(
+                  content: Text('Recently played cleared', style: GoogleFonts.poppins()),
+                  duration: const Duration(seconds: 1),
+                ),
               );
             },
           ),
@@ -128,21 +205,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 8),
                 RichText(
-                  text: const TextSpan(
+                  text: TextSpan(
                     children: [
                       TextSpan(
                         text: 'Paatu',
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF22C55E),
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF22C55E),
                         ),
                       ),
                       TextSpan(
                         text: 'fy',
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           fontSize: 18,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w500,
                           color: Colors.white,
                         ),
                       ),
@@ -150,9 +227,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Version 1.0.0 (Build 2026)',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                  style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
                 ),
               ],
             ),
