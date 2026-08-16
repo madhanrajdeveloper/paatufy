@@ -96,14 +96,23 @@ class HiveService {
   }
 
   // --- User Custom Playlists ---
-  static Future<UserPlaylist> createUserPlaylist(String name, {String? description, Song? initialSong}) async {
+  static Future<UserPlaylist> createUserPlaylist(
+    String name, {
+    String? description,
+    String? artworkUrl,
+    Song? initialSong,
+    List<Song>? songs,
+    bool isSpotifyImported = false,
+  }) async {
     final box = getUserPlaylists();
     final id = 'playlist_${DateTime.now().millisecondsSinceEpoch}';
     final playlist = UserPlaylist(
       id: id,
       name: name.trim().isEmpty ? 'My Playlist' : name.trim(),
       description: description,
-      songs: initialSong != null ? [initialSong.copyWith()] : [],
+      artworkUrl: artworkUrl,
+      isSpotifyImported: isSpotifyImported,
+      songs: songs ?? (initialSong != null ? [initialSong.copyWith()] : []),
       createdAt: DateTime.now().millisecondsSinceEpoch,
     );
     await box.put(id, playlist.toJson());

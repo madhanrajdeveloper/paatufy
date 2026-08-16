@@ -1,11 +1,12 @@
 import 'dart:math';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
 import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
+import 'package:paatufy/features/library/presentation/widgets/playlist_collage_cover.dart';
 import 'package:paatufy/features/player/presentation/widgets/song_options_modal.dart';
 import 'package:paatufy/models/song.dart';
 import 'package:paatufy/models/user_playlist.dart';
@@ -106,21 +107,12 @@ class UserPlaylistScreen extends ConsumerWidget {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      if (playlist.artworkUrl != null)
-                        CachedNetworkImage(imageUrl: playlist.artworkUrl!, fit: BoxFit.cover)
-                      else
-                        Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF15803D), Color(0xFF22C55E)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                          child: const Center(
-                            child: Icon(Icons.queue_music_rounded, color: Colors.white, size: 72),
-                          ),
-                        ),
+                      PlaylistCollageCover(
+                        playlist: playlist,
+                        width: double.infinity,
+                        height: double.infinity,
+                        borderRadius: 0,
+                      ),
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -143,7 +135,41 @@ class UserPlaylistScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(playlist.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    playlist.name,
+                                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (playlist.isSpotifyImported) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF22C55E).withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: const Color(0xFF22C55E), width: 0.5),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.download_done_rounded, size: 12, color: Color(0xFF22C55E)),
+                                        SizedBox(width: 3),
+                                        Text(
+                                          'Spotify Import',
+                                          style: TextStyle(fontSize: 10, color: Color(0xFF22C55E), fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 2),
                             Text(
                               durationString.isNotEmpty
                                   ? '${tracks.length} Songs • $durationString'
