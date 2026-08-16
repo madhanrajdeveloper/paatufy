@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -94,7 +95,7 @@ class UserPlaylistScreen extends ConsumerWidget {
                         Container(
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Color(0xFF5B4BDB), AppTheme.primary],
+                              colors: [Color(0xFF15803D), Color(0xFF22C55E)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -133,20 +134,21 @@ class UserPlaylistScreen extends ConsumerWidget {
                       IconButton(
                         icon: Icon(
                           Icons.shuffle_rounded,
-                          color: isShuffle ? AppTheme.primary : AppTheme.textSecondary,
+                          color: isShuffle ? const Color(0xFF22C55E) : AppTheme.textSecondary,
                           size: 26,
                         ),
                         onPressed: () {
                           if (tracks.isNotEmpty) {
+                            final randomIndex = Random().nextInt(tracks.length);
                             if (!isShuffle) audioHandler.toggleShuffle();
-                            audioHandler.playQueue(tracks, initialIndex: 0);
+                            audioHandler.playQueue(tracks, initialIndex: randomIndex);
                           }
                         },
                       ),
                       const SizedBox(width: 8),
                       CircleAvatar(
                         radius: 28,
-                        backgroundColor: AppTheme.primary,
+                        backgroundColor: const Color(0xFF22C55E),
                         child: IconButton(
                           icon: Icon(
                             isCurrentlyPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
@@ -202,7 +204,7 @@ class UserPlaylistScreen extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: isCurrentTrack ? AppTheme.primary : AppTheme.textPrimary,
+                            color: isCurrentTrack ? const Color(0xFF22C55E) : AppTheme.textPrimary,
                             fontWeight: isCurrentTrack ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
@@ -226,7 +228,7 @@ class UserPlaylistScreen extends ConsumerWidget {
                             IconButton(
                               icon: Icon(
                                 (isCurrentTrack && isPlaying) ? Icons.equalizer_rounded : Icons.play_arrow_rounded,
-                                color: isCurrentTrack ? AppTheme.primary : AppTheme.textSecondary,
+                                color: isCurrentTrack ? const Color(0xFF22C55E) : AppTheme.textSecondary,
                                 size: 24,
                               ),
                               onPressed: () => audioHandler.playQueue(tracks, initialIndex: index),

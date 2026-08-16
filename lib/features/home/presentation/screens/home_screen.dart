@@ -205,7 +205,7 @@ class HomeScreen extends ConsumerWidget {
           children: [
             ClipOval(
               child: Image.asset(
-                'assets/images/logo.png',
+                'assets/images/paatufy.png',
                 width: 34,
                 height: 34,
                 fit: BoxFit.cover,

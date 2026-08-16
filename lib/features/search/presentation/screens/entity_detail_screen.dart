@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -81,7 +82,6 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
   void _onPlayTrack(List<Song> queue, int index) {
     final audioHandler = ref.read(audioHandlerProvider);
 
-    // Record entire Album / Playlist to Recently Played shelf
     if (widget.type == DetailType.album || widget.type == DetailType.playlist) {
       HiveService.addRecentlyPlayedItem(
         id: widget.id,
@@ -168,7 +168,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                         return IconButton(
                           icon: Icon(
                             isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                            color: isSaved ? AppTheme.primary : AppTheme.textSecondary,
+                            color: isSaved ? const Color(0xFF22C55E) : AppTheme.textSecondary,
                             size: 28,
                           ),
                           onPressed: () {
@@ -193,7 +193,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                         return IconButton(
                           icon: Icon(
                             isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                            color: isSaved ? AppTheme.primary : AppTheme.textSecondary,
+                            color: isSaved ? const Color(0xFF22C55E) : AppTheme.textSecondary,
                             size: 28,
                           ),
                           onPressed: () {
@@ -211,23 +211,26 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                         );
                       },
                     ),
+
+                  // Shuffle Button: Starts from a random song and enables shuffle
                   IconButton(
                     icon: Icon(
                       Icons.shuffle_rounded,
-                      color: isShuffle ? AppTheme.primary : AppTheme.textSecondary,
+                      color: isShuffle ? const Color(0xFF22C55E) : AppTheme.textSecondary,
                       size: 26,
                     ),
                     onPressed: () {
                       if (_tracks.isNotEmpty) {
+                        final randomIndex = Random().nextInt(_tracks.length);
                         if (!isShuffle) audioHandler.toggleShuffle();
-                        _onPlayTrack(_tracks, 0);
+                        _onPlayTrack(_tracks, randomIndex);
                       }
                     },
                   ),
                   const SizedBox(width: 8),
                   CircleAvatar(
                     radius: 28,
-                    backgroundColor: AppTheme.primary,
+                    backgroundColor: const Color(0xFF22C55E),
                     child: IconButton(
                       icon: Icon(
                         isCurrentlyPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
@@ -252,7 +255,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
           ),
           if (_loading)
             const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+              child: Center(child: CircularProgressIndicator(color: Color(0xFF22C55E))),
             )
           else if (_tracks.isEmpty)
             const SliverFillRemaining(
@@ -275,7 +278,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                         leading: Text(
                           '${index + 1}',
                           style: TextStyle(
-                            color: isCurrentPlaying ? AppTheme.primary : AppTheme.textSecondary,
+                            color: isCurrentPlaying ? const Color(0xFF22C55E) : AppTheme.textSecondary,
                             fontWeight: isCurrentPlaying ? FontWeight.bold : FontWeight.normal,
                             fontSize: 14,
                           ),
@@ -285,14 +288,14 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: isCurrentPlaying ? AppTheme.primary : AppTheme.textPrimary,
+                            color: isCurrentPlaying ? const Color(0xFF22C55E) : AppTheme.textPrimary,
                             fontWeight: isCurrentPlaying ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                         subtitle: Row(
                           children: [
                             if (isLiked) ...[
-                              const Icon(Icons.favorite_rounded, color: AppTheme.primary, size: 12),
+                              const Icon(Icons.favorite_rounded, color: Color(0xFF22C55E), size: 12),
                               const SizedBox(width: 4),
                             ],
                             Expanded(
@@ -315,7 +318,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                             IconButton(
                               icon: Icon(
                                 (isCurrentPlaying && isPlaying) ? Icons.equalizer_rounded : Icons.play_arrow_rounded,
-                                color: isCurrentPlaying ? AppTheme.primary : AppTheme.textSecondary,
+                                color: isCurrentPlaying ? const Color(0xFF22C55E) : AppTheme.textSecondary,
                                 size: 24,
                               ),
                               onPressed: () => _onPlayTrack(_tracks, index),

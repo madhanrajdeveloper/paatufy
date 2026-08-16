@@ -58,7 +58,7 @@ class HiveService {
   static const String savedPlaylistsBox = 'saved_playlists';
   static const String userPlaylistsBox = 'user_custom_playlists';
   static const String recentlyPlayedBox = 'recently_played_items';
-  static const String recentSearchesBox = 'recent_searches';
+  static const String recentSearchesBox = 'recent_searches_items';
 
   static const int sixHoursMs = 6 * 60 * 60 * 1000;
 
@@ -212,7 +212,7 @@ class HiveService {
     }).toList().reversed.toList();
   }
 
-  // --- Recently Played (6 Hours TTL) ---
+  // --- Recently Played (6-Hour TTL) ---
   static Future<void> addRecentlyPlayedItem({
     required String id,
     required String type,
@@ -279,5 +279,56 @@ class HiveService {
 
     items.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return items;
+  }
+
+  // --- Recent Searches (Max 4 Items: Songs, Albums, Playlists, Artists) ---
+  static Future<void> addRecentSearchItem({
+    required String id,
+    required String type,
+    required String title,
+    required String subtitle,
+    String? artworkUrl,
+    String? streamUrl,
+    String? providerId,
+    int durationSeconds = 0,
+  }) async {
+    final box = getRecentSearches();
+    final item = {
+      'id': id,
+      'type': type,
+      'title': title,
+      'subtitle': subtitle,
+      'artworkUrl': artworkUrl,
+      'streamUrl': streamUrl,
+      'providerId': providerId,
+      'durationSeconds': durationSeconds,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    };
+    await box.put(id, jsonEncode(item));
+  }
+
+  static List<Map<String, dynamic>> getRecentSearchItems() {
+    final box = getRecentSearches();
+    final List<Map<String, dynamic>> items = [];
+
+    for (var val in box.values) {
+      try {
+        final map = jsonDecode(val) as Map<String, dynamic>;
+        items.add(map);
+      } catch (_) {}
+    }
+
+    items.sort((a, b) => (b['timestamp'] as int? ?? 0).compareTo(a['timestamp'] as int? ?? 0));
+    return items.take(4).toList();
+  }
+
+  static Future<void> removeRecentSearchItem(String id) async {
+    final box = getRecentSearches();
+    await box.delete(id);
+  }
+
+  static Future<void> clearRecentSearches() async {
+    final box = getRecentSearches();
+    await box.clear();
   }
 }

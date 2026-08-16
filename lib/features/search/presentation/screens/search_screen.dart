@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
+import 'package:paatufy/features/audio/data/audio_handler.dart';
 import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
 import 'package:paatufy/features/player/presentation/widgets/song_options_modal.dart';
 import 'package:paatufy/features/search/data/jiosaavn_provider.dart';
@@ -35,6 +37,8 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  Timer? _debounceTimer;
 
   final List<Map<String, dynamic>> _browseGenres = [
     {'title': 'Tamil Hits', 'color': const Color(0xFFE91E63), 'icon': Icons.music_note_rounded},
@@ -49,20 +53,170 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
+  void _onSearchChanged(String val) {
+    _debounceTimer?.cancel();
+
+    if (val.trim().isEmpty) {
+      ref.read(searchQueryProvider.notifier).state = '';
+    } else {
+      _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+        ref.read(searchQueryProvider.notifier).state = val.trim();
+      });
+    }
+    setState(() {});
+  }
+
   void _executeSearch(String query) {
+    _debounceTimer?.cancel();
     if (query.trim().isEmpty) return;
+
     _searchController.text = query;
     _searchController.selection = TextSelection.fromPosition(TextPosition(offset: query.length));
-    ref.read(searchQueryProvider.notifier).state = query;
+    ref.read(searchQueryProvider.notifier).state = query.trim();
+    _focusNode.unfocus();
+  }
 
-    // Save to Hive recent searches
-    final box = HiveService.getRecentSearches();
-    box.delete(query);
-    box.put(query, query);
+  void _onPlaySong(Song song, PaatufyAudioHandler handler) {
+    HiveService.addRecentSearchItem(
+      id: song.id,
+      type: 'song',
+      title: song.title,
+      subtitle: song.artist,
+      artworkUrl: song.artworkUrl,
+      streamUrl: song.streamUrl,
+      providerId: song.providerId,
+      durationSeconds: song.durationSeconds,
+    );
+    handler.playSong(song);
+  }
+
+  void _onOpenAlbum(AlbumSummary album) {
+    HiveService.addRecentSearchItem(
+      id: album.id,
+      type: 'album',
+      title: album.title,
+      subtitle: album.artist,
+      artworkUrl: album.artworkUrl,
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EntityDetailScreen(
+          id: album.id,
+          title: album.title,
+          subtitle: album.artist,
+          artworkUrl: album.artworkUrl,
+          type: DetailType.album,
+        ),
+      ),
+    );
+  }
+
+  void _onOpenPlaylist(PlaylistSummary playlist) {
+    HiveService.addRecentSearchItem(
+      id: playlist.id,
+      type: 'playlist',
+      title: playlist.title,
+      subtitle: playlist.subtitle ?? 'Playlist',
+      artworkUrl: playlist.artworkUrl,
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EntityDetailScreen(
+          id: playlist.id,
+          title: playlist.title,
+          subtitle: playlist.subtitle ?? 'Playlist',
+          artworkUrl: playlist.artworkUrl,
+          type: DetailType.playlist,
+        ),
+      ),
+    );
+  }
+
+  void _onOpenArtist(ArtistSummary artist) {
+    HiveService.addRecentSearchItem(
+      id: artist.id,
+      type: 'artist',
+      title: artist.name,
+      subtitle: 'Artist',
+      artworkUrl: artist.artworkUrl,
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EntityDetailScreen(
+          id: artist.id,
+          title: artist.name,
+          subtitle: 'Artist',
+          artworkUrl: artist.artworkUrl,
+          type: DetailType.artist,
+        ),
+      ),
+    );
+  }
+
+  void _onTapRecentItem(Map<String, dynamic> item, PaatufyAudioHandler handler) {
+    final type = item['type'] ?? 'song';
+
+    if (type == 'album') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EntityDetailScreen(
+            id: item['id'],
+            title: item['title'],
+            subtitle: item['subtitle'],
+            artworkUrl: item['artworkUrl'],
+            type: DetailType.album,
+          ),
+        ),
+      );
+    } else if (type == 'playlist') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EntityDetailScreen(
+            id: item['id'],
+            title: item['title'],
+            subtitle: item['subtitle'],
+            artworkUrl: item['artworkUrl'],
+            type: DetailType.playlist,
+          ),
+        ),
+      );
+    } else if (type == 'artist') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EntityDetailScreen(
+            id: item['id'],
+            title: item['title'],
+            subtitle: 'Artist',
+            artworkUrl: item['artworkUrl'],
+            type: DetailType.artist,
+          ),
+        ),
+      );
+    } else {
+      final song = Song(
+        id: item['id'],
+        provider: item['id'].toString().startsWith('audius_') ? 'Audius' : 'JioSaavn',
+        providerId: item['providerId'] ?? item['id'].toString().replaceAll('saavn_', '').replaceAll('audius_', ''),
+        title: item['title'] ?? 'Unknown Track',
+        artist: item['subtitle'] ?? 'Various Artists',
+        artworkUrl: item['artworkUrl'],
+        durationSeconds: item['durationSeconds'] ?? 0,
+        streamUrl: item['streamUrl'],
+      );
+      handler.playSong(song);
+    }
   }
 
   @override
@@ -77,22 +231,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Search Input Bar
+            // Instant Live Search Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: TextField(
                 controller: _searchController,
+                focusNode: _focusNode,
                 style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
                   hintText: 'Search songs, albums, artists...',
                   hintStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                   prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.textPrimary),
-                  suffixIcon: query.isNotEmpty
+                  suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear_rounded, color: AppTheme.textPrimary),
                           onPressed: () {
                             _searchController.clear();
-                            ref.read(searchQueryProvider.notifier).state = '';
+                            _onSearchChanged('');
                           },
                         )
                       : null,
@@ -101,19 +256,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
                 ),
+                onChanged: _onSearchChanged,
                 onSubmitted: _executeSearch,
-                onChanged: (val) {
-                  if (val.isEmpty) {
-                    ref.read(searchQueryProvider.notifier).state = '';
-                  }
-                },
               ),
             ),
 
-            // Search Content / Browse / Results
+            // Main Content Area
             Expanded(
               child: query.isEmpty
-                  ? _buildBrowseView()
+                  ? _buildBrowseView(audioHandler)
                   : Column(
                       children: [
                         // Filter Chips
@@ -144,12 +295,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                         const SizedBox(height: 8),
 
-                        // Search Results Display
+                        // Search Results
                         Expanded(
                           child: searchResults.when(
                             data: (data) => _buildResultsList(data, filter, audioHandler),
                             loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF22C55E))),
-                            error: (err, _) => Center(child: Text('Search failed: $err', style: const TextStyle(color: AppTheme.textSecondary))),
+                            error: (err, _) => Center(
+                              child: Text('Search failed: $err', style: const TextStyle(color: AppTheme.textSecondary)),
+                            ),
                           ),
                         ),
                       ],
@@ -161,16 +314,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _buildBrowseView() {
+  Widget _buildBrowseView(PaatufyAudioHandler audioHandler) {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       children: [
-        // Clickable Recent Searches
+        // 4 Recent Searches (Tracks, Albums, Playlists, Artists)
         ValueListenableBuilder<Box<String>>(
           valueListenable: HiveService.getRecentSearches().listenable(),
           builder: (context, box, _) {
-            final recents = box.values.toList().reversed.toList();
-            if (recents.isEmpty) return const SizedBox.shrink();
+            final recentSearches = HiveService.getRecentSearchItems();
+            if (recentSearches.isEmpty) return const SizedBox.shrink();
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,33 +333,50 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   children: [
                     const Text('Recent Searches', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     TextButton(
-                      onPressed: () => box.clear(),
+                      onPressed: () => HiveService.clearRecentSearches(),
                       child: const Text('Clear', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                     ),
                   ],
                 ),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: recents.take(8).map((term) {
-                    return ActionChip(
-                      backgroundColor: AppTheme.surfaceElevated,
-                      label: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(term, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
-                          const SizedBox(width: 4),
-                          GestureDetector(
-                            onTap: () => box.delete(term),
-                            child: const Icon(Icons.close_rounded, size: 14, color: AppTheme.textSecondary),
-                          ),
-                        ],
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: recentSearches.length,
+                  itemBuilder: (context, index) {
+                    final item = recentSearches[index];
+                    final isArtist = item['type'] == 'artist';
+
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: isArtist
+                          ? CircleAvatar(
+                              radius: 24,
+                              backgroundColor: AppTheme.surfaceElevated,
+                              backgroundImage: item['artworkUrl'] != null ? CachedNetworkImageProvider(item['artworkUrl']) : null,
+                              child: item['artworkUrl'] == null ? const Icon(Icons.person_rounded, color: AppTheme.textSecondary) : null,
+                            )
+                          : ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: item['artworkUrl'] != null
+                                  ? CachedNetworkImage(imageUrl: item['artworkUrl'], width: 48, height: 48, fit: BoxFit.cover)
+                                  : Container(width: 48, height: 48, color: AppTheme.surfaceElevated),
+                            ),
+                      title: Text(item['title'] ?? 'Unknown', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(
+                        '${(item['type'] ?? 'song').toString().toUpperCase()} • ${item['subtitle'] ?? ''}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                       ),
-                      onPressed: () => _executeSearch(term),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.close_rounded, color: AppTheme.textSecondary, size: 20),
+                        onPressed: () => HiveService.removeRecentSearchItem(item['id']),
+                      ),
+                      onTap: () => _onTapRecentItem(item, audioHandler),
                     );
-                  }).toList(),
+                  },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
               ],
             );
           },
@@ -260,7 +430,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _buildResultsList(UniversalSearchResult data, String filter, dynamic audioHandler) {
+  Widget _buildResultsList(UniversalSearchResult data, String filter, PaatufyAudioHandler audioHandler) {
     if (data.songs.isEmpty && data.albums.isEmpty && data.artists.isEmpty && data.playlists.isEmpty) {
       return const Center(child: Text('No results found', style: TextStyle(color: AppTheme.textSecondary)));
     }
@@ -268,10 +438,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (filter == 'Songs') {
       return ListView.builder(
         itemCount: data.songs.length,
-        itemBuilder: (context, index) {
-          final song = data.songs[index];
-          return _buildSongTile(song, audioHandler);
-        },
+        itemBuilder: (context, index) => _buildSongTile(data.songs[index], audioHandler),
       );
     }
 
@@ -342,7 +509,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _buildSongTile(Song song, dynamic audioHandler) {
+  Widget _buildSongTile(Song song, PaatufyAudioHandler audioHandler) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: ClipRRect(
@@ -357,7 +524,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         icon: const Icon(Icons.more_vert_rounded, color: AppTheme.textSecondary),
         onPressed: () => SongOptionsModal.show(context, song, audioHandler),
       ),
-      onTap: () => audioHandler.playSong(song),
+      onTap: () => _onPlaySong(song, audioHandler),
     );
   }
 
@@ -405,18 +572,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildAlbumCard(AlbumSummary album) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => EntityDetailScreen(
-            id: album.id,
-            title: album.title,
-            subtitle: album.artist,
-            artworkUrl: album.artworkUrl,
-            type: DetailType.album,
-          ),
-        ),
-      ),
+      onTap: () => _onOpenAlbum(album),
       child: SizedBox(
         width: 125,
         child: Column(
@@ -439,18 +595,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildPlaylistCard(PlaylistSummary playlist) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => EntityDetailScreen(
-            id: playlist.id,
-            title: playlist.title,
-            subtitle: playlist.subtitle ?? 'Playlist',
-            artworkUrl: playlist.artworkUrl,
-            type: DetailType.playlist,
-          ),
-        ),
-      ),
+      onTap: () => _onOpenPlaylist(playlist),
       child: SizedBox(
         width: 125,
         child: Column(
@@ -473,18 +618,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildArtistCard(ArtistSummary artist) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => EntityDetailScreen(
-            id: artist.id,
-            title: artist.name,
-            subtitle: 'Artist',
-            artworkUrl: artist.artworkUrl,
-            type: DetailType.artist,
-          ),
-        ),
-      ),
+      onTap: () => _onOpenArtist(artist),
       child: Column(
         children: [
           CircleAvatar(

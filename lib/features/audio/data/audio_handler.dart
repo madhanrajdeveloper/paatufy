@@ -129,7 +129,6 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
 
     String? stream = song.streamUrl;
 
-    // Dynamically resolve URL if search entity lacked direct stream payload
     if ((stream == null || stream.isEmpty) && streamResolver != null) {
       stream = await streamResolver!(song);
       if (stream != null && stream.isNotEmpty) {
@@ -138,7 +137,6 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
       }
     }
 
-    // Automatically record to Recently Played with resolved streamUrl
     await HiveService.addRecentlyPlayedItem(
       id: song.id,
       type: 'song',
@@ -168,16 +166,31 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
       return;
     }
 
-    if (hasNext) {
-      skipToNext();
-    } else if (_player.loopMode == LoopMode.all && _queue.isNotEmpty) {
-      _currentIndex = 0;
+    if (_queue.isEmpty) return;
+
+    if (_isShuffle) {
+      final currentPosInShuffle = _shuffleIndices.indexOf(_currentIndex);
+      if (currentPosInShuffle >= 0 && currentPosInShuffle + 1 < _shuffleIndices.length) {
+        _currentIndex = _shuffleIndices[currentPosInShuffle + 1];
+      } else {
+        // Continuous Loop: Reshuffle and start from the beginning
+        _generateShuffleIndices();
+        _currentIndex = _shuffleIndices.first;
+      }
+      _loadAndPlayCurrent();
+    } else {
+      if (_currentIndex + 1 < _queue.length) {
+        _currentIndex++;
+      } else {
+        // Continuous Loop: Return to the first song of the album/playlist
+        _currentIndex = 0;
+      }
       _loadAndPlayCurrent();
     }
   }
 
-  bool get hasNext => _currentIndex + 1 < _queue.length;
-  bool get hasPrevious => _currentIndex > 0;
+  bool get hasNext => _queue.isNotEmpty;
+  bool get hasPrevious => _queue.isNotEmpty;
 
   @override
   Future<void> skipToNext() async {
@@ -185,18 +198,17 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
 
     if (_isShuffle) {
       final currentPosInShuffle = _shuffleIndices.indexOf(_currentIndex);
-      if (currentPosInShuffle + 1 < _shuffleIndices.length) {
+      if (currentPosInShuffle >= 0 && currentPosInShuffle + 1 < _shuffleIndices.length) {
         _currentIndex = _shuffleIndices[currentPosInShuffle + 1];
-        await _loadAndPlayCurrent();
-      } else if (_player.loopMode == LoopMode.all) {
+      } else {
         _currentIndex = _shuffleIndices.first;
-        await _loadAndPlayCurrent();
       }
+      await _loadAndPlayCurrent();
     } else if (_currentIndex + 1 < _queue.length) {
       _currentIndex++;
       await _loadAndPlayCurrent();
-    } else if (_player.loopMode == LoopMode.all) {
-      _currentIndex = 0;
+    } else {
+      _currentIndex = 0; // Wrap around to first track
       await _loadAndPlayCurrent();
     }
   }
@@ -212,13 +224,16 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
       final currentPosInShuffle = _shuffleIndices.indexOf(_currentIndex);
       if (currentPosInShuffle > 0) {
         _currentIndex = _shuffleIndices[currentPosInShuffle - 1];
-        await _loadAndPlayCurrent();
+      } else {
+        _currentIndex = _shuffleIndices.last;
       }
+      await _loadAndPlayCurrent();
     } else if (_currentIndex > 0) {
       _currentIndex--;
       await _loadAndPlayCurrent();
     } else {
-      await _player.seek(Duration.zero);
+      _currentIndex = _queue.length - 1; // Wrap around to end of album
+      await _loadAndPlayCurrent();
     }
   }
 
@@ -257,9 +272,10 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     }
   }
 
-  // --- Real-time Sleep Timer Clock ---
+  // --- Real-time Sleep Timer with Smooth Fade-Out ---
   void setSleepTimer(Duration? duration) {
     _sleepTicker?.cancel();
+    _player.setVolume(1.0); // Reset volume on timer configuration
 
     if (duration == null) {
       _sleepTargetTime = null;
@@ -270,20 +286,32 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     _sleepTargetTime = DateTime.now().add(duration);
     _sleepTimerRemainingController.add(duration);
 
-    _sleepTicker = Timer.periodic(const Duration(seconds: 1), (timer) {
+    const fadeDurationSeconds = 15; // Smooth fade-out duration
+
+    _sleepTicker = Timer.periodic(const Duration(milliseconds: 500), (timer) async {
       if (_sleepTargetTime == null) {
+        await _player.setVolume(1.0);
         timer.cancel();
         return;
       }
 
       final diff = _sleepTargetTime!.difference(DateTime.now());
       if (diff <= Duration.zero) {
-        pause();
+        await pause();
+        await _player.setVolume(1.0); // Restore volume for future playback
         _sleepTargetTime = null;
         _sleepTimerRemainingController.add(null);
         timer.cancel();
       } else {
         _sleepTimerRemainingController.add(diff);
+
+        // Gradually fade out volume in the final 15 seconds
+        if (diff.inSeconds < fadeDurationSeconds) {
+          final volumeRatio = (diff.inMilliseconds / (fadeDurationSeconds * 1000.0)).clamp(0.0, 1.0);
+          _player.setVolume(volumeRatio);
+        } else {
+          _player.setVolume(1.0);
+        }
       }
     });
   }
@@ -316,7 +344,10 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   @override
-  Future<void> play() => _player.play();
+  Future<void> play() {
+    _player.setVolume(1.0);
+    return _player.play();
+  }
 
   @override
   Future<void> pause() => _player.pause();
