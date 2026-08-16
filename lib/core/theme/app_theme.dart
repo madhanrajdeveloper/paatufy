@@ -12,19 +12,49 @@ class AppTheme {
   static const Color divider = Color(0xFF252A32);
 
   static ThemeData get darkTheme {
-    return ThemeData(
+    final baseDark = ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: background,
       primaryColor: primary,
       cardColor: surface,
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
-        titleLarge: const TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
-        bodyMedium: const TextStyle(color: textSecondary),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      colorScheme: const ColorScheme.dark(
+        primary: primary,
+        secondary: primary,
+        surface: surface,
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    );
+
+    return baseDark.copyWith(
+      textTheme: GoogleFonts.poppinsTextTheme(baseDark.textTheme).apply(
+        bodyColor: textPrimary,
+        displayColor: textPrimary,
+      ),
+      primaryTextTheme: GoogleFonts.poppinsTextTheme(baseDark.primaryTextTheme).apply(
+        bodyColor: textPrimary,
+        displayColor: textPrimary,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        titleTextStyle: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: textPrimary,
+        ),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: surface,
         selectedItemColor: primary,
         unselectedItemColor: textSecondary,
+        selectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11),
+        unselectedLabelStyle: GoogleFonts.poppins(fontSize: 11),
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: surfaceElevated,
       ),
     );
   }
