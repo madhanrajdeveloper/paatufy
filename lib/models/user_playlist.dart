@@ -5,59 +5,76 @@ class UserPlaylist {
   final String id;
   final String name;
   final String? description;
+  final String? artworkUrl;
   final List<Song> songs;
   final int createdAt;
+  final bool isSpotifyImported;
 
   UserPlaylist({
     required this.id,
     required this.name,
     this.description,
+    this.artworkUrl,
     required this.songs,
     required this.createdAt,
+    this.isSpotifyImported = false,
   });
 
-  String? get artworkUrl => songs.isNotEmpty ? songs.first.artworkUrl : null;
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'artworkUrl': artworkUrl,
+      'isSpotifyImported': isSpotifyImported,
+      'songs': songs.map((x) {
+        return {
+          'id': x.id,
+          'provider': x.provider,
+          'providerId': x.providerId,
+          'title': x.title,
+          'artist': x.artist,
+          'album': x.album,
+          'artworkUrl': x.artworkUrl,
+          'durationSeconds': x.durationSeconds,
+          'streamUrl': x.streamUrl,
+        };
+      }).toList(),
+      'createdAt': createdAt,
+    };
+  }
 
-  Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'songs': songs
-            .map((s) => {
-                  'id': s.id,
-                  'provider': s.provider,
-                  'providerId': s.providerId,
-                  'title': s.title,
-                  'artist': s.artist,
-                  'album': s.album,
-                  'artworkUrl': s.artworkUrl,
-                  'durationSeconds': s.durationSeconds,
-                  'streamUrl': s.streamUrl,
-                })
-            .toList(),
-        'createdAt': createdAt,
-      };
+  factory UserPlaylist.fromMap(Map<String, dynamic> map) {
+    final desc = map['description']?.toString() ?? '';
+    final bool isImported = map['isSpotifyImported'] == true || desc.toLowerCase().contains('spotify');
 
-  factory UserPlaylist.fromMap(Map<String, dynamic> map) => UserPlaylist(
-        id: map['id'] ?? '',
-        name: map['name'] ?? 'Untitled Playlist',
-        description: map['description'],
-        songs: (map['songs'] as List? ?? [])
-            .map((item) => Song(
-                  id: item['id'] ?? '',
-                  provider: item['provider'] ?? 'JioSaavn',
-                  providerId: item['providerId'] ?? '',
-                  title: item['title'] ?? 'Unknown Track',
-                  artist: item['artist'] ?? 'Unknown Artist',
-                  album: item['album'],
-                  artworkUrl: item['artworkUrl'],
-                  durationSeconds: item['durationSeconds'] ?? 0,
-                  streamUrl: item['streamUrl'],
-                ))
-            .toList(),
-        createdAt: map['createdAt'] ?? DateTime.now().millisecondsSinceEpoch,
-      );
+    return UserPlaylist(
+      id: map['id'] ?? '',
+      name: map['name'] ?? 'My Playlist',
+      description: map['description'],
+      artworkUrl: map['artworkUrl'],
+      isSpotifyImported: isImported,
+      songs: map['songs'] != null
+          ? (map['songs'] as List).map((x) {
+              final s = Map<String, dynamic>.from(x);
+              return Song(
+                id: s['id'] ?? '',
+                provider: s['provider'] ?? 'JioSaavn',
+                providerId: s['providerId'] ?? '',
+                title: s['title'] ?? 'Unknown',
+                artist: s['artist'] ?? 'Unknown Artist',
+                album: s['album'],
+                artworkUrl: s['artworkUrl'],
+                durationSeconds: s['durationSeconds'] ?? 0,
+                streamUrl: s['streamUrl'],
+              );
+            }).toList()
+          : [],
+      createdAt: map['createdAt'] ?? DateTime.now().millisecondsSinceEpoch,
+    );
+  }
 
   String toJson() => jsonEncode(toMap());
-  factory UserPlaylist.fromJson(String str) => UserPlaylist.fromMap(jsonDecode(str));
+
+  factory UserPlaylist.fromJson(String source) => UserPlaylist.fromMap(jsonDecode(source));
 }

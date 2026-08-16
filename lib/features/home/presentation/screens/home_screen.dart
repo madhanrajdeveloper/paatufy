@@ -8,6 +8,8 @@ import 'package:paatufy/core/theme/app_theme.dart';
 import 'package:paatufy/features/audio/data/audio_handler.dart';
 import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
 import 'package:paatufy/features/library/presentation/screens/user_playlist_screen.dart';
+import 'package:paatufy/features/library/presentation/widgets/playlist_collage_cover.dart';
+import 'package:paatufy/features/library/presentation/widgets/spotify_import_modal.dart';
 import 'package:paatufy/features/profile/presentation/screens/profile_screen.dart';
 import 'package:paatufy/features/profile/presentation/screens/settings_screen.dart';
 import 'package:paatufy/features/search/presentation/screens/entity_detail_screen.dart';
@@ -205,7 +207,7 @@ class HomeScreen extends ConsumerWidget {
           children: [
             ClipOval(
               child: Image.asset(
-                'assets/images/paatufy.png',
+                'assets/images/logo.png',
                 width: 34,
                 height: 34,
                 fit: BoxFit.cover,
@@ -339,7 +341,7 @@ class HomeScreen extends ConsumerWidget {
             },
           ),
 
-          // 2. Your Playlists Shelf (Custom User Playlists on Home)
+          // 2. Your Playlists Shelf (with Collage Covers, Spotify Badges & Import Action)
           ValueListenableBuilder<Box<String>>(
             valueListenable: HiveService.getUserPlaylists().listenable(),
             builder: (context, box, _) {
@@ -349,7 +351,29 @@ class HomeScreen extends ConsumerWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Your Playlists', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Your Playlists', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      GestureDetector(
+                        onTap: () => SpotifyImportModal.show(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF22C55E).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.download_rounded, size: 14, color: Color(0xFF22C55E)),
+                              SizedBox(width: 4),
+                              Text('Import Spotify', style: TextStyle(color: Color(0xFF22C55E), fontSize: 11, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   SizedBox(
                     height: 175,
@@ -369,22 +393,39 @@ class HomeScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: playlist.artworkUrl != null
-                                      ? CachedNetworkImage(imageUrl: playlist.artworkUrl!, width: 115, height: 115, fit: BoxFit.cover)
-                                      : Container(
-                                          width: 115,
-                                          height: 115,
-                                          decoration: const BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [Color(0xFF15803D), Color(0xFF22C55E)],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ),
+                                Stack(
+                                  children: [
+                                    PlaylistCollageCover(
+                                      playlist: playlist,
+                                      width: 115,
+                                      height: 115,
+                                      borderRadius: 8,
+                                    ),
+                                    if (playlist.isSpotifyImported)
+                                      Positioned(
+                                        top: 4,
+                                        left: 4,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withOpacity(0.85),
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: const Color(0xFF22C55E), width: 0.5),
                                           ),
-                                          child: const Icon(Icons.queue_music_rounded, color: Colors.white, size: 40),
+                                          child: const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.download_done_rounded, size: 10, color: Color(0xFF22C55E)),
+                                              SizedBox(width: 2),
+                                              Text(
+                                                'SPOTIFY',
+                                                style: TextStyle(fontSize: 8, color: Color(0xFF22C55E), fontWeight: FontWeight.bold),
+                                              ),
+                                            ],
+                                          ),
                                         ),
+                                      ),
+                                  ],
                                 ),
                                 const SizedBox(height: 6),
                                 Text(playlist.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
