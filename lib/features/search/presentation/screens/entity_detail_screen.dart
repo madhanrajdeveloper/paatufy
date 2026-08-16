@@ -79,6 +79,22 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
     }
   }
 
+  String _formatTotalDuration(List<Song> songs) {
+    final totalSeconds = songs.fold<int>(0, (sum, song) => sum + song.durationSeconds);
+    if (totalSeconds <= 0) return '';
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return '$hours hr ${minutes > 0 ? '$minutes min' : ''}'.trim();
+    } else if (minutes > 0) {
+      return '$minutes min ${seconds > 0 ? '$seconds sec' : ''}'.trim();
+    } else {
+      return '$seconds sec';
+    }
+  }
+
   void _onPlayTrack(List<Song> queue, int index) {
     final audioHandler = ref.read(audioHandlerProvider);
 
@@ -104,6 +120,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
 
     final bool isThisListPlaying = _tracks.any((s) => s.id == currentSong?.id);
     final bool isCurrentlyPlaying = isThisListPlaying && isPlaying;
+    final String durationString = _formatTotalDuration(_tracks);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -156,7 +173,12 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                         Text(widget.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                         if (widget.subtitle != null)
                           Text(widget.subtitle!, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
-                        Text('${_tracks.length} Tracks', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                        Text(
+                          durationString.isNotEmpty
+                              ? '${_tracks.length} Tracks • $durationString'
+                              : '${_tracks.length} Tracks',
+                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                        ),
                       ],
                     ),
                   ),
@@ -212,7 +234,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                       },
                     ),
 
-                  // Shuffle Button: Starts from a random song and enables shuffle
+                  // Shuffle Button
                   IconButton(
                     icon: Icon(
                       Icons.shuffle_rounded,
