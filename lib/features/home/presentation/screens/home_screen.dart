@@ -1,10 +1,12 @@
 import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
+import 'package:paatufy/core/widgets/shimmer_loading.dart';
 import 'package:paatufy/features/audio/data/audio_handler.dart';
 import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
 import 'package:paatufy/features/auth/presentation/controllers/auth_controller.dart';
@@ -13,11 +15,13 @@ import 'package:paatufy/features/library/presentation/widgets/playlist_collage_c
 import 'package:paatufy/features/library/presentation/widgets/spotify_import_modal.dart';
 import 'package:paatufy/features/profile/presentation/screens/profile_screen.dart';
 import 'package:paatufy/features/profile/presentation/screens/settings_screen.dart';
+import 'package:paatufy/features/search/data/jiosaavn_provider.dart';
 import 'package:paatufy/features/search/presentation/screens/entity_detail_screen.dart';
-import 'package:paatufy/features/search/presentation/screens/search_screen.dart';
 import 'package:paatufy/models/search_result.dart';
 import 'package:paatufy/models/song.dart';
 import 'package:paatufy/models/user_playlist.dart';
+
+final jioSaavnProviderInstance = Provider<JioSaavnProvider>((ref) => JioSaavnProvider(Dio()));
 
 final List<String> _tamilSeeds = [
   'Latest Tamil Hits',
@@ -275,7 +279,7 @@ class HomeScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
         children: [
-          // 1. Recently Played Shelf (6-Hour TTL)
+          // 1. Recently Played Shelf
           ValueListenableBuilder(
             valueListenable: HiveService.getRecentlyPlayed().listenable(),
             builder: (context, Box<String> box, _) {
@@ -354,7 +358,7 @@ class HomeScreen extends ConsumerWidget {
             },
           ),
 
-          // 2. Your Playlists Shelf (with Collage Covers, Spotify Badges & Import Action)
+          // 2. Your Playlists Shelf
           ValueListenableBuilder<Box<String>>(
             valueListenable: HiveService.getUserPlaylists().listenable(),
             builder: (context, box, _) {
@@ -456,7 +460,7 @@ class HomeScreen extends ConsumerWidget {
             },
           ),
 
-          // 3. Dynamic Recommendations Feed
+          // 3. Dynamic Recommendations Feed with Spotify Shimmer Skeleton
           discovery.when(
             data: (data) {
               final quickPicks = data['quickPicks'] as List<Song>;
@@ -664,10 +668,7 @@ class HomeScreen extends ConsumerWidget {
                 ],
               );
             },
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Center(child: CircularProgressIndicator(color: Color(0xFF22C55E))),
-            ),
+            loading: () => const HomeFeedSkeleton(),
             error: (err, _) => const SizedBox.shrink(),
           ),
         ],
