@@ -90,7 +90,7 @@
 1. **Clone the repository:**
 
    ```bash
-   git clone [https://github.com/YOUR_USERNAME/paatufy.git](https://github.com/YOUR_USERNAME/paatufy.git)
+   git clone https://github.com/madhanrajdeveloper/paatufy.git
    cd paatufy
 
    ```
@@ -121,7 +121,7 @@
 Ensure the following permissions and service declarations are included for background playback, media keys, and network streaming:
 
 ```bash
-<manifest xmlns:android="[http://schemas.android.com/apk/res/android](http://schemas.android.com/apk/res/android)">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
  <!-- Audio Streaming & Background Service Permissions -->
  <uses-permission android:name="android.permission.INTERNET"/>
