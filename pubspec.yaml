@@ -44,6 +44,10 @@ dependencies:
   crypto: ^3.0.3
   uuid: ^4.3.3
 
+  # Update & Notifications
+  package_info_plus: ^8.0.0
+  ota_update: ^7.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
