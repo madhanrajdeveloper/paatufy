@@ -3,11 +3,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
+import 'package:paatufy/core/widgets/shimmer_loading.dart';
 import 'package:paatufy/features/audio/data/audio_handler.dart';
 import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
+import 'package:paatufy/features/player/presentation/widgets/equalizer_visualizer.dart';
 import 'package:paatufy/features/player/presentation/widgets/song_options_modal.dart';
 import 'package:paatufy/features/search/data/jiosaavn_provider.dart';
 import 'package:paatufy/features/search/presentation/screens/entity_detail_screen.dart';
@@ -39,6 +42,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   Timer? _debounceTimer;
+
+  final List<String> _filters = ['All', 'Songs', 'Artists', 'Albums', 'Playlists'];
 
   final List<Map<String, dynamic>> _browseGenres = [
     {'title': 'Tamil Hits', 'color': const Color(0xFFE91E63), 'icon': Icons.music_note_rounded},
@@ -225,87 +230,116 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final filter = ref.watch(searchFilterProvider);
     final searchResults = ref.watch(searchResultsProvider);
     final audioHandler = ref.read(audioHandlerProvider);
+    final activeMediaItem = ref.watch(currentSongProvider).value ?? audioHandler.mediaItem.value;
+    final isPlaying = ref.watch(isPlayingProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
         child: Column(
           children: [
-            // Instant Live Search Bar
+            // 1. Search Bar Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: TextField(
-                controller: _searchController,
-                focusNode: _focusNode,
-                style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  hintText: 'Search songs, albums, artists...',
-                  hintStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.textPrimary),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear_rounded, color: AppTheme.textPrimary),
-                          onPressed: () {
-                            _searchController.clear();
-                            _onSearchChanged('');
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: AppTheme.surfaceElevated,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E242B),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
                 ),
-                onChanged: _onSearchChanged,
-                onSubmitted: _executeSearch,
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _focusNode,
+                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                  cursorColor: const Color(0xFF22C55E),
+                  decoration: InputDecoration(
+                    hintText: 'Search songs, albums, artists...',
+                    hintStyle: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 14),
+                    prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.textSecondary, size: 22),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close_rounded, color: AppTheme.textSecondary, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearchChanged('');
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onChanged: _onSearchChanged,
+                  onSubmitted: _executeSearch,
+                ),
               ),
             ),
 
-            // Main Content Area
+            // 2. Filter Pills Selector
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                scrollDirection: Axis.horizontal,
+                itemCount: _filters.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final f = _filters[index];
+                  final isSelected = filter == f;
+
+                  return GestureDetector(
+                    onTap: () => ref.read(searchFilterProvider.notifier).state = f,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFF22C55E) : const Color(0xFF181E24),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected ? const Color(0xFF22C55E) : Colors.white.withOpacity(0.12),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isSelected && f != 'All') ...[
+                            const Icon(Icons.check_rounded, color: Colors.black, size: 15),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            f,
+                            style: GoogleFonts.poppins(
+                              color: isSelected ? Colors.black : Colors.white,
+                              fontSize: 12,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            // 3. Main Content Area
             Expanded(
               child: query.isEmpty
                   ? _buildBrowseView(audioHandler)
-                  : Column(
-                      children: [
-                        // Filter Chips
-                        Container(
-                          height: 40,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: ['All', 'Songs', 'Artists', 'Albums', 'Playlists'].map((f) {
-                              final isSelected = filter == f;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: ChoiceChip(
-                                  label: Text(f),
-                                  selected: isSelected,
-                                  onSelected: (_) => ref.read(searchFilterProvider.notifier).state = f,
-                                  selectedColor: const Color(0xFF22C55E),
-                                  backgroundColor: AppTheme.surfaceElevated,
-                                  labelStyle: TextStyle(
-                                    color: isSelected ? Colors.black : AppTheme.textPrimary,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
+                  : searchResults.when(
+                      data: (data) => _buildResultsList(data, filter, audioHandler, activeMediaItem, isPlaying),
+                      loading: () => const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: SongListSkeleton(itemCount: 8),
+                      ),
+                      error: (err, _) => Center(
+                        child: Text(
+                          'Search failed: $err',
+                          style: GoogleFonts.poppins(color: AppTheme.textSecondary),
                         ),
-                        const SizedBox(height: 8),
-
-                        // Search Results
-                        Expanded(
-                          child: searchResults.when(
-                            data: (data) => _buildResultsList(data, filter, audioHandler),
-                            loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF22C55E))),
-                            error: (err, _) => Center(
-                              child: Text('Search failed: $err', style: const TextStyle(color: AppTheme.textSecondary)),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
             ),
           ],
@@ -316,9 +350,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildBrowseView(PaatufyAudioHandler audioHandler) {
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 90),
       children: [
-        // 4 Recent Searches (Tracks, Albums, Playlists, Artists)
+        // Recent Searches
         ValueListenableBuilder<Box<String>>(
           valueListenable: HiveService.getRecentSearches().listenable(),
           builder: (context, box, _) {
@@ -331,10 +365,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Recent Searches', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(
+                      'Recent Searches',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                    ),
                     TextButton(
                       onPressed: () => HiveService.clearRecentSearches(),
-                      child: const Text('Clear', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                      child: Text(
+                        'Clear',
+                        style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
+                      ),
                     ),
                   ],
                 ),
@@ -347,29 +387,54 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     final isArtist = item['type'] == 'artist';
 
                     return ListTile(
-                      contentPadding: EdgeInsets.zero,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 2),
                       leading: isArtist
                           ? CircleAvatar(
                               radius: 24,
                               backgroundColor: AppTheme.surfaceElevated,
-                              backgroundImage: item['artworkUrl'] != null ? CachedNetworkImageProvider(item['artworkUrl']) : null,
-                              child: item['artworkUrl'] == null ? const Icon(Icons.person_rounded, color: AppTheme.textSecondary) : null,
+                              backgroundImage: item['artworkUrl'] != null
+                                  ? CachedNetworkImageProvider(item['artworkUrl'])
+                                  : null,
+                              child: item['artworkUrl'] == null
+                                  ? const Icon(Icons.person_rounded, color: AppTheme.textSecondary)
+                                  : null,
                             )
                           : ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(6),
                               child: item['artworkUrl'] != null
-                                  ? CachedNetworkImage(imageUrl: item['artworkUrl'], width: 48, height: 48, fit: BoxFit.cover)
-                                  : Container(width: 48, height: 48, color: AppTheme.surfaceElevated),
+                                  ? CachedNetworkImage(
+                                      imageUrl: item['artworkUrl'],
+                                      width: 48,
+                                      height: 48,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (_, __, ___) => Container(
+                                        width: 48,
+                                        height: 48,
+                                        color: AppTheme.surfaceElevated,
+                                        child: const Icon(Icons.music_note_rounded, color: AppTheme.textSecondary),
+                                      ),
+                                    )
+                                  : Container(
+                                      width: 48,
+                                      height: 48,
+                                      color: AppTheme.surfaceElevated,
+                                      child: const Icon(Icons.music_note_rounded, color: AppTheme.textSecondary),
+                                    ),
                             ),
-                      title: Text(item['title'] ?? 'Unknown', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(
+                        item['title'] ?? 'Unknown',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white),
+                      ),
                       subtitle: Text(
                         '${(item['type'] ?? 'song').toString().toUpperCase()} • ${item['subtitle'] ?? ''}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                        style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 11),
                       ),
                       trailing: IconButton(
-                        icon: const Icon(Icons.close_rounded, color: AppTheme.textSecondary, size: 20),
+                        icon: const Icon(Icons.close_rounded, color: AppTheme.textSecondary, size: 18),
                         onPressed: () => HiveService.removeRecentSearchItem(item['id']),
                       ),
                       onTap: () => _onTapRecentItem(item, audioHandler),
@@ -382,8 +447,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           },
         ),
 
-        // Browse All Genres Grid
-        const Text('Browse All', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        // Browse All Genres
+        Text(
+          'Browse All',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+        ),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -392,7 +460,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1.6,
+            childAspectRatio: 1.65,
           ),
           itemCount: _browseGenres.length,
           itemBuilder: (context, index) {
@@ -409,14 +477,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   children: [
                     Text(
                       genre['title'],
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     Positioned(
                       bottom: -4,
                       right: -4,
                       child: Transform.rotate(
-                        angle: 0.3,
-                        child: Icon(genre['icon'], size: 48, color: Colors.black.withOpacity(0.25)),
+                        angle: 0.28,
+                        child: Icon(genre['icon'], size: 48, color: Colors.black.withOpacity(0.24)),
                       ),
                     ),
                   ],
@@ -430,15 +498,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _buildResultsList(UniversalSearchResult data, String filter, PaatufyAudioHandler audioHandler) {
+  Widget _buildResultsList(
+    UniversalSearchResult data,
+    String filter,
+    PaatufyAudioHandler audioHandler,
+    dynamic activeMediaItem,
+    bool isPlaying,
+  ) {
     if (data.songs.isEmpty && data.albums.isEmpty && data.artists.isEmpty && data.playlists.isEmpty) {
-      return const Center(child: Text('No results found', style: TextStyle(color: AppTheme.textSecondary)));
+      return Center(
+        child: Text(
+          'No results found',
+          style: GoogleFonts.poppins(color: AppTheme.textSecondary),
+        ),
+      );
     }
 
     if (filter == 'Songs') {
       return ListView.builder(
+        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 90),
         itemCount: data.songs.length,
-        itemBuilder: (context, index) => _buildSongTile(data.songs[index], audioHandler),
+        itemBuilder: (context, index) => _buildSongTile(data.songs[index], audioHandler, activeMediaItem, isPlaying),
       );
     }
 
@@ -454,46 +534,52 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       return _buildPlaylistsGrid(data.playlists);
     }
 
-    // Default 'All' View
+    // Default 'All' Filter
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 90),
       children: [
         if (data.songs.isNotEmpty) ...[
-          const Text('Songs', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('Songs', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 8),
-          ...data.songs.take(5).map((song) => _buildSongTile(song, audioHandler)),
-          const SizedBox(height: 16),
+          ...data.songs.take(4).map((song) => _buildSongTile(song, audioHandler, activeMediaItem, isPlaying)),
+          const SizedBox(height: 20),
         ],
         if (data.albums.isNotEmpty) ...[
-          const Text('Albums', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('Albums', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 12),
           SizedBox(
-            height: 175,
+            height: 195,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: data.albums.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) => _buildAlbumCard(data.albums[index]),
+              separatorBuilder: (_, __) => const SizedBox(width: 14),
+              itemBuilder: (context, index) => SizedBox(
+                width: 130,
+                child: _buildAlbumCard(data.albums[index]),
+              ),
             ),
           ),
           const SizedBox(height: 20),
         ],
         if (data.playlists.isNotEmpty) ...[
-          const Text('Playlists', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('Playlists', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 12),
           SizedBox(
-            height: 175,
+            height: 195,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: data.playlists.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) => _buildPlaylistCard(data.playlists[index]),
+              separatorBuilder: (_, __) => const SizedBox(width: 14),
+              itemBuilder: (context, index) => SizedBox(
+                width: 130,
+                child: _buildPlaylistCard(data.playlists[index]),
+              ),
             ),
           ),
           const SizedBox(height: 20),
         ],
         if (data.artists.isNotEmpty) ...[
-          const Text('Artists', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('Artists', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 12),
           SizedBox(
             height: 140,
@@ -501,7 +587,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               scrollDirection: Axis.horizontal,
               itemCount: data.artists.length,
               separatorBuilder: (_, __) => const SizedBox(width: 16),
-              itemBuilder: (context, index) => _buildArtistCard(data.artists[index]),
+              itemBuilder: (context, index) => SizedBox(
+                width: 85,
+                child: _buildArtistCard(data.artists[index]),
+              ),
             ),
           ),
         ],
@@ -509,19 +598,66 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _buildSongTile(Song song, PaatufyAudioHandler audioHandler) {
+  Widget _buildSongTile(
+    Song song,
+    PaatufyAudioHandler audioHandler,
+    dynamic activeMediaItem,
+    bool isPlaying,
+  ) {
+    final isCurrent = activeMediaItem?.id == song.id;
+
     return ListTile(
-      contentPadding: EdgeInsets.zero,
+      contentPadding: const EdgeInsets.symmetric(vertical: 3),
       leading: ClipRRect(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(6),
         child: song.artworkUrl != null
-            ? CachedNetworkImage(imageUrl: song.artworkUrl!, width: 48, height: 48, fit: BoxFit.cover)
-            : Container(width: 48, height: 48, color: AppTheme.surfaceElevated),
+            ? CachedNetworkImage(
+                imageUrl: song.artworkUrl!,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => Container(
+                  width: 48,
+                  height: 48,
+                  color: AppTheme.surfaceElevated,
+                  child: const Icon(Icons.music_note_rounded, color: AppTheme.textSecondary),
+                ),
+              )
+            : Container(
+                width: 48,
+                height: 48,
+                color: AppTheme.surfaceElevated,
+                child: const Icon(Icons.music_note_rounded, color: AppTheme.textSecondary),
+              ),
       ),
-      title: Text(song.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(song.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+      title: Row(
+        children: [
+          if (isCurrent && isPlaying) ...[
+            const EqualizerVisualizer(isPlaying: true, size: 14),
+            const SizedBox(width: 6),
+          ],
+          Expanded(
+            child: Text(
+              song.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                color: isCurrent ? const Color(0xFF22C55E) : Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+      subtitle: Text(
+        'Song • ${song.artist}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 11),
+      ),
       trailing: IconButton(
-        icon: const Icon(Icons.more_vert_rounded, color: AppTheme.textSecondary),
+        icon: const Icon(Icons.more_vert_rounded, color: AppTheme.textSecondary, size: 20),
         onPressed: () => SongOptionsModal.show(context, song, audioHandler),
       ),
       onTap: () => _onPlaySong(song, audioHandler),
@@ -529,13 +665,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Widget _buildAlbumsGrid(List<AlbumSummary> albums) {
+    if (albums.isEmpty) {
+      return Center(
+        child: Text('No albums found', style: GoogleFonts.poppins(color: AppTheme.textSecondary)),
+      );
+    }
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-        childAspectRatio: 0.8,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.74,
       ),
       itemCount: albums.length,
       itemBuilder: (context, index) => _buildAlbumCard(albums[index]),
@@ -543,13 +684,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Widget _buildPlaylistsGrid(List<PlaylistSummary> playlists) {
+    if (playlists.isEmpty) {
+      return Center(
+        child: Text('No playlists found', style: GoogleFonts.poppins(color: AppTheme.textSecondary)),
+      );
+    }
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-        childAspectRatio: 0.8,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.74,
       ),
       itemCount: playlists.length,
       itemBuilder: (context, index) => _buildPlaylistCard(playlists[index]),
@@ -557,13 +703,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Widget _buildArtistsGrid(List<ArtistSummary> artists) {
+    if (artists.isEmpty) {
+      return Center(
+        child: Text('No artists found', style: GoogleFonts.poppins(color: AppTheme.textSecondary)),
+      );
+    }
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.8,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.82,
       ),
       itemCount: artists.length,
       itemBuilder: (context, index) => _buildArtistCard(artists[index]),
@@ -573,22 +724,43 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget _buildAlbumCard(AlbumSummary album) {
     return GestureDetector(
       onTap: () => _onOpenAlbum(album),
-      child: SizedBox(
-        width: 125,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: album.artworkUrl != null
-                  ? CachedNetworkImage(imageUrl: album.artworkUrl!, width: 125, height: 125, fit: BoxFit.cover)
-                  : Container(width: 125, height: 125, color: AppTheme.surfaceElevated),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AspectRatio(
+            aspectRatio: 1.0,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: album.artworkUrl != null && album.artworkUrl!.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: album.artworkUrl!,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) => Container(
+                        color: AppTheme.surfaceElevated,
+                        child: const Icon(Icons.album_rounded, color: AppTheme.textSecondary, size: 36),
+                      ),
+                    )
+                  : Container(
+                      color: AppTheme.surfaceElevated,
+                      child: const Icon(Icons.album_rounded, color: AppTheme.textSecondary, size: 36),
+                    ),
             ),
-            const SizedBox(height: 6),
-            Text(album.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            Text(album.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            album.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Album • ${album.artist}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 11),
+          ),
+        ],
       ),
     );
   }
@@ -596,22 +768,43 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget _buildPlaylistCard(PlaylistSummary playlist) {
     return GestureDetector(
       onTap: () => _onOpenPlaylist(playlist),
-      child: SizedBox(
-        width: 125,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: playlist.artworkUrl != null
-                  ? CachedNetworkImage(imageUrl: playlist.artworkUrl!, width: 125, height: 125, fit: BoxFit.cover)
-                  : Container(width: 125, height: 125, color: AppTheme.surfaceElevated),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AspectRatio(
+            aspectRatio: 1.0,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: playlist.artworkUrl != null && playlist.artworkUrl!.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: playlist.artworkUrl!,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) => Container(
+                        color: AppTheme.surfaceElevated,
+                        child: const Icon(Icons.playlist_play_rounded, color: AppTheme.textSecondary, size: 36),
+                      ),
+                    )
+                  : Container(
+                      color: AppTheme.surfaceElevated,
+                      child: const Icon(Icons.playlist_play_rounded, color: AppTheme.textSecondary, size: 36),
+                    ),
             ),
-            const SizedBox(height: 6),
-            Text(playlist.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            Text('${playlist.trackCount} Tracks', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            playlist.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            playlist.subtitle ?? 'Playlist',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 11),
+          ),
+        ],
       ),
     );
   }
@@ -622,13 +815,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       child: Column(
         children: [
           CircleAvatar(
-            radius: 40,
+            radius: 46,
             backgroundColor: AppTheme.surfaceElevated,
-            backgroundImage: artist.artworkUrl != null ? CachedNetworkImageProvider(artist.artworkUrl!) : null,
-            child: artist.artworkUrl == null ? const Icon(Icons.person_rounded, color: AppTheme.textSecondary) : null,
+            backgroundImage: artist.artworkUrl != null && artist.artworkUrl!.isNotEmpty
+                ? CachedNetworkImageProvider(artist.artworkUrl!)
+                : null,
+            child: artist.artworkUrl == null || artist.artworkUrl!.isEmpty
+                ? const Icon(Icons.person_rounded, size: 36, color: AppTheme.textSecondary)
+                : null,
           ),
-          const SizedBox(height: 6),
-          Text(artist.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(
+            artist.name,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+          ),
+          Text(
+            'Artist',
+            style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 11),
+          ),
         ],
       ),
     );

@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
+import 'package:paatufy/core/widgets/shimmer_loading.dart';
 import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
+import 'package:paatufy/features/player/presentation/widgets/equalizer_visualizer.dart';
 import 'package:paatufy/features/player/presentation/widgets/song_options_modal.dart';
 import 'package:paatufy/features/search/presentation/screens/search_screen.dart';
 import 'package:paatufy/models/search_result.dart';
@@ -46,30 +48,32 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
   Future<void> _fetchTracks() async {
     final provider = ref.read(jioSaavnProviderInstance);
     List<Song> songs = [];
-    if (widget.type == DetailType.album) {
-      songs = await provider.getAlbumSongs(widget.id);
-    } else if (widget.type == DetailType.playlist) {
-      songs = await provider.getPlaylistSongs(widget.id);
-    } else {
-      songs = await provider.getArtistTopSongs(widget.id, artistName: widget.title);
-    }
-
-    songs = songs.map((s) {
-      if (s.artist.trim().isEmpty || s.artist == 'Unknown Artist') {
-        return Song(
-          id: s.id,
-          provider: s.provider,
-          providerId: s.providerId,
-          title: s.title,
-          artist: widget.subtitle ?? widget.title,
-          album: widget.title,
-          artworkUrl: s.artworkUrl ?? widget.artworkUrl,
-          durationSeconds: s.durationSeconds,
-          streamUrl: s.streamUrl,
-        );
+    try {
+      if (widget.type == DetailType.album) {
+        songs = await provider.getAlbumSongs(widget.id);
+      } else if (widget.type == DetailType.playlist) {
+        songs = await provider.getPlaylistSongs(widget.id);
+      } else {
+        songs = await provider.getArtistTopSongs(widget.id, artistName: widget.title);
       }
-      return s;
-    }).toList();
+
+      songs = songs.map((s) {
+        if (s.artist.trim().isEmpty || s.artist == 'Unknown Artist') {
+          return Song(
+            id: s.id,
+            provider: s.provider,
+            providerId: s.providerId,
+            title: s.title,
+            artist: widget.subtitle ?? widget.title,
+            album: widget.title,
+            artworkUrl: s.artworkUrl ?? widget.artworkUrl,
+            durationSeconds: s.durationSeconds,
+            streamUrl: s.streamUrl,
+          );
+        }
+        return s;
+      }).toList();
+    } catch (_) {}
 
     if (mounted) {
       setState(() {
@@ -127,7 +131,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 280,
+            expandedHeight: 300,
             pinned: true,
             backgroundColor: AppTheme.surfaceElevated,
             leading: IconButton(
@@ -144,7 +148,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (widget.artworkUrl != null)
+                  if (widget.artworkUrl != null && widget.artworkUrl!.isNotEmpty)
                     CachedNetworkImage(imageUrl: widget.artworkUrl!, fit: BoxFit.cover)
                   else
                     Container(color: AppTheme.surface),
@@ -153,7 +157,13 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, AppTheme.background.withOpacity(0.95)],
+                        colors: [
+                          Colors.transparent,
+                          AppTheme.background.withOpacity(0.4),
+                          AppTheme.background.withOpacity(0.95),
+                          AppTheme.background,
+                        ],
+                        stops: const [0.0, 0.4, 0.8, 1.0],
                       ),
                     ),
                   ),
@@ -173,10 +183,13 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                         Text(widget.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                         if (widget.subtitle != null)
                           Text(widget.subtitle!, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+                        const SizedBox(height: 2),
                         Text(
-                          durationString.isNotEmpty
-                              ? '${_tracks.length} Tracks • $durationString'
-                              : '${_tracks.length} Tracks',
+                          _loading
+                              ? 'Loading tracks...'
+                              : durationString.isNotEmpty
+                                  ? '${_tracks.length} Tracks • $durationString'
+                                  : '${_tracks.length} Tracks',
                           style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                         ),
                       ],
@@ -276,12 +289,20 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
             ),
           ),
           if (_loading)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator(color: Color(0xFF22C55E))),
+            const SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              sliver: SliverToBoxAdapter(
+                child: SongListSkeleton(itemCount: 10),
+              ),
             )
           else if (_tracks.isEmpty)
             const SliverFillRemaining(
-              child: Center(child: Text('No tracks available', style: TextStyle(color: AppTheme.textSecondary))),
+              child: Center(
+                child: Text(
+                  'No tracks available',
+                  style: TextStyle(color: AppTheme.textSecondary),
+                ),
+              ),
             )
           else
             SliverList(
@@ -297,13 +318,19 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
 
                       return ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                        leading: Text(
-                          '${index + 1}',
-                          style: TextStyle(
-                            color: isCurrentPlaying ? const Color(0xFF22C55E) : AppTheme.textSecondary,
-                            fontWeight: isCurrentPlaying ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 14,
-                          ),
+                        leading: SizedBox(
+                          width: 24,
+                          child: isCurrentPlaying && isPlaying
+                              ? const EqualizerVisualizer(isPlaying: true, size: 14)
+                              : Text(
+                                  '${index + 1}',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: isCurrentPlaying ? const Color(0xFF22C55E) : AppTheme.textSecondary,
+                                    fontWeight: isCurrentPlaying ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 14,
+                                  ),
+                                ),
                         ),
                         title: Text(
                           song.title,
@@ -311,7 +338,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: isCurrentPlaying ? const Color(0xFF22C55E) : AppTheme.textPrimary,
-                            fontWeight: isCurrentPlaying ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isCurrentPlaying ? FontWeight.bold : FontWeight.w600,
                           ),
                         ),
                         subtitle: Row(
@@ -339,11 +366,17 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                             ),
                             IconButton(
                               icon: Icon(
-                                (isCurrentPlaying && isPlaying) ? Icons.equalizer_rounded : Icons.play_arrow_rounded,
+                                (isCurrentPlaying && isPlaying) ? Icons.pause_rounded : Icons.play_arrow_rounded,
                                 color: isCurrentPlaying ? const Color(0xFF22C55E) : AppTheme.textSecondary,
                                 size: 24,
                               ),
-                              onPressed: () => _onPlayTrack(_tracks, index),
+                              onPressed: () {
+                                if (isCurrentPlaying && isPlaying) {
+                                  audioHandler.pause();
+                                } else {
+                                  _onPlayTrack(_tracks, index);
+                                }
+                              },
                             ),
                           ],
                         ),
@@ -355,7 +388,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                 childCount: _tracks.length,
               ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 30)),
+          const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
       ),
     );
