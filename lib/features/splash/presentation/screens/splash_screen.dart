@@ -144,7 +144,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                       text: 'Paatu',
                       style: GoogleFonts.poppins(
                         fontSize: 34,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w500,
                         letterSpacing: 1.5,
                         color: const Color(0xFF22C55E),
                       ),
@@ -153,7 +153,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                       text: 'fy',
                       style: GoogleFonts.poppins(
                         fontSize: 34,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w500,
                         letterSpacing: 1.5,
                         color: Colors.white,
                       ),
@@ -167,7 +167,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                 style: GoogleFonts.poppins(
                   color: AppTheme.textSecondary,
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w200,
                   letterSpacing: 0.8,
                 ),
               ),
