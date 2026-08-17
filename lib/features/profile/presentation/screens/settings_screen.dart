@@ -1,20 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:paatufy/core/services/firestore_service.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
+import 'package:paatufy/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:paatufy/models/user_model.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
-  String _streamingQuality = 'High (320kbps)';
-  bool _normalizeVolume = true;
-  bool _gaplessPlayback = true;
-  bool _streamOnWifiOnly = false;
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  late String _streamingQuality;
+  late bool _normalizeVolume;
+  late bool _gaplessPlayback;
+  late bool _streamOnWifiOnly;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = ref.read(authControllerProvider).user ?? HiveService.getUserMeta(HiveService.activeUserId);
+    _streamingQuality = user?.streamingQuality ?? 'High (320kbps)';
+    _streamOnWifiOnly = user?.streamOnWifiOnly ?? false;
+    _normalizeVolume = user?.normalizeVolume ?? true;
+    _gaplessPlayback = user?.gaplessPlayback ?? true;
+  }
+
+  Future<void> _updateSetting({
+    String? streamingQuality,
+    bool? streamOnWifiOnly,
+    bool? gaplessPlayback,
+    bool? normalizeVolume,
+  }) async {
+    final authState = ref.read(authControllerProvider);
+    final user = authState.user ?? HiveService.getUserMeta(HiveService.activeUserId);
+
+    if (user != null) {
+      final updatedUser = user.copyWith(
+        streamingQuality: streamingQuality ?? _streamingQuality,
+        streamOnWifiOnly: streamOnWifiOnly ?? _streamOnWifiOnly,
+        gaplessPlayback: gaplessPlayback ?? _gaplessPlayback,
+        normalizeVolume: normalizeVolume ?? _normalizeVolume,
+      );
+
+      // Save locally in Hive
+      await HiveService.saveUserMeta(updatedUser);
+
+      // Background Firestore sync
+      FirestoreService.saveUser(updatedUser).catchError((_) {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +101,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: PopupMenuButton<String>(
               color: AppTheme.surfaceElevated,
               initialValue: _streamingQuality,
-              onSelected: (val) => setState(() => _streamingQuality = val),
+              onSelected: (val) {
+                setState(() => _streamingQuality = val);
+                _updateSetting(streamingQuality: val);
+              },
               itemBuilder: (context) => [
                 PopupMenuItem(
                   value: 'Auto',
@@ -88,7 +130,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             value: _streamOnWifiOnly,
             activeColor: const Color(0xFF22C55E),
-            onChanged: (val) => setState(() => _streamOnWifiOnly = val),
+            onChanged: (val) {
+              setState(() => _streamOnWifiOnly = val);
+              _updateSetting(streamOnWifiOnly: val);
+            },
           ),
           const Divider(color: AppTheme.divider, height: 28),
 
@@ -114,7 +159,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             value: _gaplessPlayback,
             activeColor: const Color(0xFF22C55E),
-            onChanged: (val) => setState(() => _gaplessPlayback = val),
+            onChanged: (val) {
+              setState(() => _gaplessPlayback = val);
+              _updateSetting(gaplessPlayback: val);
+            },
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
@@ -128,11 +176,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             value: _normalizeVolume,
             activeColor: const Color(0xFF22C55E),
-            onChanged: (val) => setState(() => _normalizeVolume = val),
+            onChanged: (val) {
+              setState(() => _normalizeVolume = val);
+              _updateSetting(normalizeVolume: val);
+            },
           ),
           const Divider(color: AppTheme.divider, height: 28),
 
-          // Storage & Cache
+          // Storage & Cache (Synced across Cloud & Local Storage)
           Text(
             'Storage & Cache',
             style: GoogleFonts.poppins(
@@ -149,18 +200,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             subtitle: Text(
-              'Remove all stored recent queries',
+              'Remove all stored recent queries across devices',
               style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
             ),
             trailing: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-            onTap: () {
-              HiveService.getRecentSearches().clear();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Search history cleared', style: GoogleFonts.poppins()),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
+            onTap: () async {
+              await HiveService.clearRecentSearches();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Search history cleared everywhere', style: GoogleFonts.poppins()),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              }
             },
           ),
           ListTile(
@@ -170,18 +223,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             subtitle: Text(
-              'Reset the 6-hour playback shelf',
+              'Reset the 6-hour playback shelf across devices',
               style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
             ),
             trailing: const Icon(Icons.history_toggle_off_rounded, color: Colors.redAccent),
-            onTap: () {
-              HiveService.getRecentlyPlayed().clear();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Recently played cleared', style: GoogleFonts.poppins()),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
+            onTap: () async {
+              await HiveService.clearRecentlyPlayed();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Recently played cleared everywhere', style: GoogleFonts.poppins()),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              }
             },
           ),
           const Divider(color: AppTheme.divider, height: 28),
@@ -211,7 +266,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         text: 'Paatu',
                         style: GoogleFonts.poppins(
                           fontSize: 18,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w900,
                           color: const Color(0xFF22C55E),
                         ),
                       ),
@@ -219,7 +274,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         text: 'fy',
                         style: GoogleFonts.poppins(
                           fontSize: 18,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w900,
                           color: Colors.white,
                         ),
                       ),

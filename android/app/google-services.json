@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "778154439360",
+    "project_id": "paatufy-15e40",
+    "storage_bucket": "paatufy-15e40.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:778154439360:android:3114abc789da7a86b4b325",
+        "android_client_info": {
+          "package_name": "com.paatufy.paatufy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8eZr4eZF-SNTGQrywBkBsbk9i2Bqsn1M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

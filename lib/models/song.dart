@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'package:hive/hive.dart';
 
 part 'song.g.dart';
 
 @HiveType(typeId: 0)
-class Song {
+class Song extends HiveObject {
   @HiveField(0)
   final String id;
 
@@ -39,7 +40,7 @@ class Song {
     required this.artist,
     this.album,
     this.artworkUrl,
-    required this.durationSeconds,
+    this.durationSeconds = 0,
     this.streamUrl,
   });
 
@@ -66,6 +67,39 @@ class Song {
       streamUrl: streamUrl ?? this.streamUrl,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'provider': provider,
+      'providerId': providerId,
+      'title': title,
+      'artist': artist,
+      'album': album,
+      'artworkUrl': artworkUrl,
+      'durationSeconds': durationSeconds,
+      'streamUrl': streamUrl,
+    };
+  }
+
+  factory Song.fromMap(Map<String, dynamic> map) {
+    return Song(
+      id: map['id']?.toString() ?? '',
+      provider: map['provider']?.toString() ?? 'JioSaavn',
+      providerId: map['providerId']?.toString() ?? '',
+      title: map['title']?.toString() ?? 'Unknown Track',
+      artist: map['artist']?.toString() ?? 'Unknown Artist',
+      album: map['album']?.toString(),
+      artworkUrl: map['artworkUrl']?.toString(),
+      durationSeconds: (map['durationSeconds'] as num?)?.toInt() ?? 0,
+      streamUrl: map['streamUrl']?.toString(),
+    );
+  }
+
+  String toJson() => jsonEncode(toMap());
+
+  factory Song.fromJson(String source) =>
+      Song.fromMap(jsonDecode(source) as Map<String, dynamic>);
 
   factory Song.fromAudius(Map<String, dynamic> json, String host) {
     return Song(

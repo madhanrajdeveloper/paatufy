@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
@@ -12,8 +13,13 @@ import 'package:paatufy/routing/app_router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Firebase Cloud Backend
+  await Firebase.initializeApp();
+
+  // Initialize Local Hive Storage & Restore Authenticated Session
   await HiveService.init();
 
+  // Initialize Background Audio Service & Media Notifications
   final audioHandler = await AudioService.init(
     builder: () => PaatufyAudioHandler(),
     config: const AudioServiceConfig(

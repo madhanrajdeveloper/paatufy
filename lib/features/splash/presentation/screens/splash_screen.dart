@@ -1,20 +1,21 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
+import 'package:paatufy/features/auth/presentation/controllers/auth_controller.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProviderStateMixin {
   late AnimationController _entranceController;
   late AnimationController _rippleController;
-
   late Animation<double> _logoScale;
   late Animation<double> _logoFade;
 
@@ -22,19 +23,16 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   void initState() {
     super.initState();
 
-    // Drop impact and entrance animation
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
 
-    // Continuous outward water ripple wave controller
     _rippleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2400),
     )..repeat();
 
-    // Water droplet impact bounce effect
     _logoScale = TweenSequence<double>([
       TweenSequenceItem(tween: Tween<double>(begin: 0.4, end: 1.08).chain(CurveTween(curve: Curves.easeOutCubic)), weight: 70),
       TweenSequenceItem(tween: Tween<double>(begin: 1.08, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)), weight: 30),
@@ -46,12 +44,27 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
     _entranceController.forward();
 
-    // Navigate to Home
-    Future.delayed(const Duration(milliseconds: 2600), () {
-      if (mounted) {
+    // Verify session state and route directly
+    _checkAndNavigate();
+  }
+
+  Future<void> _checkAndNavigate() async {
+    await Future.delayed(const Duration(milliseconds: 2200));
+
+    if (!mounted) return;
+
+    await ref.read(authControllerProvider.notifier).checkInitialSession();
+    final auth = ref.read(authControllerProvider);
+
+    if (auth.isAuthenticated && auth.user != null) {
+      if (auth.user!.hasCompletedOnboarding) {
         context.go('/home');
+      } else {
+        context.go('/onboarding');
       }
-    });
+    } else {
+      context.go('/login');
+    }
   }
 
   @override
@@ -71,14 +84,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Water Drop Ripple Wave Container
               SizedBox(
                 width: 320,
                 height: 320,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Custom Water Ripple Wave Painter
                     AnimatedBuilder(
                       animation: _rippleController,
                       builder: (context, child) {
@@ -92,8 +103,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         );
                       },
                     ),
-
-                    // Central Logo with Droplet Impact Physics
                     ScaleTransition(
                       scale: _logoScale,
                       child: Container(
@@ -115,7 +124,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             width: 120,
                             height: 120,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => const Icon(
+                            errorBuilder: (_, __, ___) => const Icon(
                               Icons.music_note_rounded,
                               size: 72,
                               color: Color(0xFF22C55E),
@@ -128,8 +137,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Brand Name styled with Poppins
               RichText(
                 text: TextSpan(
                   children: [
@@ -137,7 +144,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       text: 'Paatu',
                       style: GoogleFonts.poppins(
                         fontSize: 34,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w900,
                         letterSpacing: 1.5,
                         color: const Color(0xFF22C55E),
                       ),
@@ -146,7 +153,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       text: 'fy',
                       style: GoogleFonts.poppins(
                         fontSize: 34,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w900,
                         letterSpacing: 1.5,
                         color: Colors.white,
                       ),
@@ -155,14 +162,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 ),
               ),
               const SizedBox(height: 8),
-
-              // Tagline styled with Poppins
               Text(
                 'Music for everyone',
                 style: GoogleFonts.poppins(
                   color: AppTheme.textSecondary,
                   fontSize: 13,
-                  fontWeight: FontWeight.w200,
+                  fontWeight: FontWeight.w500,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -174,7 +179,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 }
 
-/// Painter that simulates concentric water drop ripples expanding outward
 class WaterDropRipplePainter extends CustomPainter {
   final double animationValue;
   final Color rippleColor;
@@ -194,19 +198,10 @@ class WaterDropRipplePainter extends CustomPainter {
     final maxRadius = size.width / 2;
 
     for (int i = 0; i < waveCount; i++) {
-      // Stagger each wave ring
       final double waveProgress = (animationValue + (i / waveCount)) % 1.0;
-
-      // Realistic water surface deceleration curve
       final double curvedProgress = Curves.easeOutCubic.transform(waveProgress);
-
-      // Expansion from logo edge outward
       final double radius = baseRadius + (maxRadius - baseRadius) * curvedProgress;
-
-      // Natural water ripple opacity dissipation (starts visible, dissolves at outer edges)
       final double opacity = math.sin(waveProgress * math.pi) * (1.0 - waveProgress);
-
-      // Stroke thins out as the ripple propagates away
       final double strokeWidth = (3.5 * (1.0 - waveProgress)).clamp(0.8, 3.5);
 
       final paint = Paint()
@@ -214,7 +209,6 @@ class WaterDropRipplePainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth;
 
-      // Subtle soft glow edge for each water wavefront
       final glowPaint = Paint()
         ..color = rippleColor.withOpacity((opacity * 0.35).clamp(0.0, 1.0))
         ..style = PaintingStyle.stroke
@@ -227,7 +221,5 @@ class WaterDropRipplePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant WaterDropRipplePainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue;
-  }
+  bool shouldRepaint(covariant WaterDropRipplePainter oldDelegate) => oldDelegate.animationValue != animationValue;
 }

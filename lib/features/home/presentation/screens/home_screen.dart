@@ -7,6 +7,7 @@ import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
 import 'package:paatufy/features/audio/data/audio_handler.dart';
 import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
+import 'package:paatufy/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:paatufy/features/library/presentation/screens/user_playlist_screen.dart';
 import 'package:paatufy/features/library/presentation/widgets/playlist_collage_cover.dart';
 import 'package:paatufy/features/library/presentation/widgets/spotify_import_modal.dart';
@@ -196,6 +197,11 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final discovery = ref.watch(homeDiscoveryProvider);
     final audioHandler = ref.read(audioHandlerProvider);
+    final authState = ref.watch(authControllerProvider);
+    final user = authState.user ?? HiveService.getUserMeta(HiveService.activeUserId);
+    final String userInitial = (user != null && user.name.trim().isNotEmpty)
+        ? user.name.trim()[0].toUpperCase()
+        : 'U';
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -246,8 +252,15 @@ class HomeScreen extends ConsumerWidget {
                   end: Alignment.bottomRight,
                 ),
               ),
-              child: const Center(
-                child: Text('M', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black)),
+              child: Center(
+                child: Text(
+                  userInitial,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Colors.black,
+                  ),
+                ),
               ),
             ),
           ),
