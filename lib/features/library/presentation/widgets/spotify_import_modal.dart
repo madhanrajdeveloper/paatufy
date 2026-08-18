@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
+import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
 import 'package:paatufy/features/library/data/spotify_importer_service.dart';
 import 'package:paatufy/features/library/presentation/screens/user_playlist_screen.dart';
 import 'package:paatufy/features/search/presentation/screens/search_screen.dart';
@@ -16,8 +17,11 @@ class SpotifyImportModal extends ConsumerStatefulWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: AppTheme.surfaceElevated,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => const SpotifyImportModal(),
     );
   }
@@ -58,7 +62,10 @@ class _SpotifyImportModalState extends ConsumerState<SpotifyImportModal> {
 
     if (playlistId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid Spotify playlist link'), backgroundColor: Colors.redAccent),
+        const SnackBar(
+          content: Text('Invalid Spotify playlist link'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
@@ -77,7 +84,10 @@ class _SpotifyImportModalState extends ConsumerState<SpotifyImportModal> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to parse Spotify tracks. Ensure the playlist is public.'), backgroundColor: Colors.redAccent),
+          const SnackBar(
+            content: Text('Unable to parse Spotify tracks. Ensure the playlist is public.'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
       return;
@@ -108,13 +118,15 @@ class _SpotifyImportModalState extends ConsumerState<SpotifyImportModal> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not match tracks from this playlist.'), backgroundColor: Colors.redAccent),
+          const SnackBar(
+            content: Text('Could not match tracks from this playlist.'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
       return;
     }
 
-    // Explicitly set isSpotifyImported = true
     final userPlaylist = await HiveService.createUserPlaylist(
       playlistData.title,
       description: 'Imported from Spotify • Ad-Free Playback',
@@ -142,12 +154,23 @@ class _SpotifyImportModalState extends ConsumerState<SpotifyImportModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final audioHandler = ref.watch(audioHandlerProvider);
+    final hasActiveMiniPlayer = audioHandler.mediaItem.value != null;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    // Provide 90px clearance for the MiniPlayer when keyboard is closed
+    final bottomPadding = bottomInset > 0
+        ? bottomInset + 20
+        : (hasActiveMiniPlayer ? 90.0 : 24.0);
+
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
       padding: EdgeInsets.only(
         left: 20,
         right: 20,
         top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        bottom: bottomPadding,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

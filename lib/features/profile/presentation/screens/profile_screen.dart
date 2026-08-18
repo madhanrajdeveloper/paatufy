@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
+import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
 import 'package:paatufy/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:paatufy/models/user_model.dart';
 
@@ -52,105 +53,142 @@ class ProfileScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: AppTheme.surfaceElevated,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           final allUsers = HiveService.getAllUsers();
           final currentUser = ref.read(authControllerProvider).user;
+          final audioHandler = ref.watch(audioHandlerProvider);
+          final hasActiveMiniPlayer = audioHandler.mediaItem.value != null;
+          final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
 
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Switch Account', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
-                      IconButton(icon: const Icon(Icons.close_rounded, color: AppTheme.textSecondary), onPressed: () => Navigator.pop(ctx)),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text('Select an account to load its isolated library, or tap the delete icon to remove it from this device.', style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12)),
-                  const SizedBox(height: 16),
-                  if (allUsers.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: Text('No accounts registered.', style: GoogleFonts.poppins(color: AppTheme.textSecondary))),
-                    )
-                  else
-                    ...allUsers.map((user) {
-                      final isCurrent = user.id == currentUser?.id;
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          backgroundColor: const Color(0xFF22C55E),
-                          backgroundImage: user.photoUrl != null ? CachedNetworkImageProvider(user.photoUrl!) : null,
-                          child: user.photoUrl == null ? Text(user.name[0].toUpperCase(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.black)) : null,
-                        ),
-                        title: Row(
-                          children: [
-                            Flexible(child: Text(user.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14))),
-                            if (isCurrent) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                decoration: BoxDecoration(color: const Color(0xFF22C55E).withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-                                child: Text('ACTIVE', style: GoogleFonts.poppins(fontSize: 9, color: const Color(0xFF22C55E), fontWeight: FontWeight.bold)),
+          // Provide 90px clearance for the floating MiniPlayer when keyboard is closed
+          final bottomPadding = bottomInset > 0
+              ? bottomInset + 20
+              : (hasActiveMiniPlayer ? 90.0 : 24.0);
+
+          return AnimatedPadding(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: bottomPadding,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Switch Account', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+                    IconButton(icon: const Icon(Icons.close_rounded, color: AppTheme.textSecondary), onPressed: () => Navigator.pop(ctx)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Select an account to load its isolated library, or tap the delete icon to remove it from this device.',
+                  style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
+                ),
+                const SizedBox(height: 16),
+                if (allUsers.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(child: Text('No accounts registered.', style: GoogleFonts.poppins(color: AppTheme.textSecondary))),
+                  )
+                else
+                  ...allUsers.map((user) {
+                    final isCurrent = user.id == currentUser?.id;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundColor: const Color(0xFF22C55E),
+                        backgroundImage: user.photoUrl != null ? CachedNetworkImageProvider(user.photoUrl!) : null,
+                        child: user.photoUrl == null
+                            ? Text(user.name[0].toUpperCase(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.black))
+                            : null,
+                      ),
+                      title: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              user.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                          if (isCurrent) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF22C55E).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
                               ),
-                            ],
-                          ],
-                        ),
-                        subtitle: Text(user.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12)),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                              tooltip: 'Remove Account',
-                              onPressed: () {
-                                _confirmDeleteAccount(context, ref, user, () {
-                                  final remaining = HiveService.getAllUsers();
-                                  if (remaining.isEmpty) {
-                                    Navigator.pop(ctx);
-                                    context.go('/login');
-                                  } else {
-                                    setModalState(() {});
-                                  }
-                                });
-                              },
+                              child: Text(
+                                'ACTIVE',
+                                style: GoogleFonts.poppins(fontSize: 9, color: const Color(0xFF22C55E), fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ],
-                        ),
-                        onTap: () async {
-                          if (!isCurrent) {
-                            await ref.read(authControllerProvider.notifier).switchUser(user);
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            if (context.mounted) context.go('/home');
-                          }
-                        },
-                      );
-                    }),
-                  const Divider(color: AppTheme.divider, height: 24),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(color: AppTheme.surface, shape: BoxShape.circle),
-                      child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF22C55E)),
-                    ),
-                    title: Text('Add another account', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      context.go('/signup');
-                    },
+                        ],
+                      ),
+                      subtitle: Text(
+                        user.email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                            tooltip: 'Remove Account',
+                            onPressed: () {
+                              _confirmDeleteAccount(context, ref, user, () {
+                                final remaining = HiveService.getAllUsers();
+                                if (remaining.isEmpty) {
+                                  Navigator.pop(ctx);
+                                  context.go('/login');
+                                } else {
+                                  setModalState(() {});
+                                }
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      onTap: () async {
+                        if (!isCurrent) {
+                          await ref.read(authControllerProvider.notifier).switchUser(user);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          if (context.mounted) context.go('/home');
+                        }
+                      },
+                    );
+                  }),
+                const Divider(color: AppTheme.divider, height: 24),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(color: AppTheme.surface, shape: BoxShape.circle),
+                    child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF22C55E)),
                   ),
-                ],
-              ),
+                  title: Text('Add another account', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    context.go('/signup');
+                  },
+                ),
+              ],
             ),
           );
         },
