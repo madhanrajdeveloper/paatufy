@@ -192,10 +192,14 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     String? stream = song.streamUrl;
 
     if ((stream == null || stream.isEmpty) && streamResolver != null) {
-      stream = await streamResolver!(song);
-      if (stream != null && stream.isNotEmpty) {
-        song = song.copyWith(streamUrl: stream);
-        _queue[_currentIndex] = song;
+      try {
+        stream = await streamResolver!(song);
+        if (stream != null && stream.isNotEmpty) {
+          song = song.copyWith(streamUrl: stream);
+          _queue[_currentIndex] = song;
+        }
+      } catch (e) {
+        debugPrint('Failed to resolve stream for ${song.title}: $e');
       }
     }
 
@@ -215,13 +219,20 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
         final session = await AudioSession.instance;
         await session.setActive(true);
 
-        await _player.stop();
-        await _player.seek(Duration.zero);
-        await _player.setUrl(stream);
+        await _player.setAudioSource(
+          AudioSource.uri(Uri.parse(stream)),
+          initialPosition: Duration.zero,
+          preload: true,
+        );
         await _player.play();
       } catch (e) {
-        debugPrint('Audio playback failure: $e');
+        debugPrint('Audio playback failure on ${song.title}: $e');
+        // If track fails to load, gracefully advance to next track
+        await skipToNext();
       }
+    } else {
+      // Unresolvable track, skip forward
+      await skipToNext();
     }
   }
 
