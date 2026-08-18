@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -10,6 +11,7 @@ import 'package:paatufy/features/audio/data/audio_handler.dart';
 import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
 import 'package:paatufy/features/search/data/jiosaavn_provider.dart';
 import 'package:paatufy/routing/app_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,15 +27,23 @@ void main() async {
   // Initialize Local Hive Storage & Restore Authenticated Session
   await HiveService.init();
 
+  // Request Notification Permission for Android 13+
+  if (Platform.isAndroid) {
+    await Permission.notification.request();
+  }
+
   // Initialize Background Audio Service & Media Notifications
   final audioHandler = await AudioService.init(
     builder: () => PaatufyAudioHandler(),
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'com.paatufy.audio',
       androidNotificationChannelName: 'Paatufy Playback',
-      androidNotificationOngoing: true,
-      androidStopForegroundOnPause: true,
+      androidNotificationChannelDescription: 'Music playback notification controls',
+      androidNotificationOngoing: false,
+      androidStopForegroundOnPause: false,
       androidNotificationIcon: 'drawable/ic_stat_music',
+      androidShowNotificationBadge: true,
+      notificationColor: Color(0xFF22C55E),
     ),
   );
 

@@ -40,45 +40,18 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
 
   void _initPlayer() {
     _player.playbackEventStream.listen((PlaybackEvent event) {
-      final playing = _player.playing;
-      playbackState.add(playbackState.value.copyWith(
-        controls: [
-          MediaControl.skipToPrevious,
-          if (playing) MediaControl.pause else MediaControl.play,
-          MediaControl.stop,
-          MediaControl.skipToNext,
-        ],
-        systemActions: const {
-          MediaAction.seek,
-          MediaAction.seekForward,
-          MediaAction.seekBackward,
-          MediaAction.setShuffleMode,
-          MediaAction.setRepeatMode,
-        },
-        androidCompactActionIndices: const [0, 1, 3],
-        processingState: const {
-          ProcessingState.idle: AudioProcessingState.idle,
-          ProcessingState.loading: AudioProcessingState.loading,
-          ProcessingState.buffering: AudioProcessingState.buffering,
-          ProcessingState.ready: AudioProcessingState.ready,
-          ProcessingState.completed: AudioProcessingState.completed,
-        }[_player.processingState]!,
-        playing: playing,
-        updatePosition: _player.position,
-        bufferedPosition: _player.bufferedPosition,
-        speed: _player.speed,
-        queueIndex: _currentIndex >= 0 ? _currentIndex : null,
-      ));
+      _broadcastState();
+    });
+
+    _player.playerStateStream.listen((state) {
+      _broadcastState();
+      if (state.processingState == ProcessingState.completed) {
+        _handleTrackCompletion();
+      }
     });
 
     _player.positionStream.listen((pos) {
       playbackState.add(playbackState.value.copyWith(updatePosition: pos));
-    });
-
-    _player.playerStateStream.listen((state) {
-      if (state.processingState == ProcessingState.completed) {
-        _handleTrackCompletion();
-      }
     });
 
     _player.durationStream.listen((duration) {
@@ -87,6 +60,39 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
         mediaItem.add(current.copyWith(duration: duration));
       }
     });
+  }
+
+  void _broadcastState() {
+    final playing = _player.playing;
+    final processingState = const {
+      ProcessingState.idle: AudioProcessingState.idle,
+      ProcessingState.loading: AudioProcessingState.loading,
+      ProcessingState.buffering: AudioProcessingState.buffering,
+      ProcessingState.ready: AudioProcessingState.ready,
+      ProcessingState.completed: AudioProcessingState.completed,
+    }[_player.processingState] ?? AudioProcessingState.idle;
+
+    playbackState.add(playbackState.value.copyWith(
+      controls: [
+        MediaControl.skipToPrevious,
+        if (playing) MediaControl.pause else MediaControl.play,
+        MediaControl.skipToNext,
+      ],
+      systemActions: const {
+        MediaAction.seek,
+        MediaAction.seekForward,
+        MediaAction.seekBackward,
+        MediaAction.setShuffleMode,
+        MediaAction.setRepeatMode,
+      },
+      androidCompactActionIndices: const [0, 1, 3],
+      processingState: processingState,
+      playing: playing,
+      updatePosition: _player.position,
+      bufferedPosition: _player.bufferedPosition,
+      speed: _player.speed,
+      queueIndex: _currentIndex >= 0 ? _currentIndex : null,
+    ));
   }
 
   Future<void> playQueue(List<Song> songs, {int initialIndex = 0}) async {
@@ -215,6 +221,7 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
       if (currentPosInShuffle >= 0 && currentPosInShuffle + 1 < _shuffleIndices.length) {
         _currentIndex = _shuffleIndices[currentPosInShuffle + 1];
       } else {
+        _generateShuffleIndices();
         _currentIndex = _shuffleIndices.first;
       }
       await _loadAndPlayCurrent();
@@ -313,7 +320,7 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     playbackState.add(playbackState.value.copyWith(repeatMode: repeatMode));
   }
 
-  // --- Real-time Sleep Timer with Smooth Fade-Out ---
+  // Real-time Sleep Timer
   void setSleepTimer(Duration? duration) {
     _sleepTicker?.cancel();
     _player.setVolume(1.0);
@@ -363,7 +370,7 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     }
   }
 
-  // --- Persistent Like & Collections Support ---
+  // Persistent Likes
   bool isSongLiked(String id) => HiveService.getLikedSongs().containsKey(id);
 
   bool isCurrentSongLiked() {
@@ -408,7 +415,7 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     _shuffleIndices = [];
     _queueController.add(_queue);
 
-    // Emits null so MiniPlayer dismisses instantly
+    // Emits null so MiniPlayer and OS notification dismiss cleanly
     mediaItem.add(null);
 
     playbackState.add(playbackState.value.copyWith(
