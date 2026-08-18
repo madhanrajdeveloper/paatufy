@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:paatufy/core/services/app_update_service.dart';
 import 'package:paatufy/core/services/firestore_service.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
+import 'package:paatufy/core/widgets/update_dialog.dart';
 import 'package:paatufy/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:paatufy/models/user_model.dart';
 
@@ -20,6 +23,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late bool _gaplessPlayback;
   late bool _streamOnWifiOnly;
 
+  String _currentAppVersion = 'Loading...';
+  bool _isCheckingUpdate = false;
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +34,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _streamOnWifiOnly = user?.streamOnWifiOnly ?? false;
     _normalizeVolume = user?.normalizeVolume ?? true;
     _gaplessPlayback = user?.gaplessPlayback ?? true;
+
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _currentAppVersion = 'Version ${packageInfo.version} (Build ${packageInfo.buildNumber})';
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _currentAppVersion = 'Version 1.0.0';
+        });
+      }
+    }
+  }
+
+  Future<void> _manualCheckForUpdate() async {
+    if (_isCheckingUpdate) return;
+
+    setState(() => _isCheckingUpdate = true);
+
+    final updateInfo = await AppUpdateService.checkForUpdate();
+
+    if (!mounted) return;
+    setState(() => _isCheckingUpdate = false);
+
+    if (updateInfo != null && updateInfo.isUpdateAvailable) {
+      UpdateDialog.show(context, updateInfo);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You are on the latest version of Paatufy!',
+            style: GoogleFonts.poppins(color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFF1E242B),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Future<void> _updateSetting({
@@ -183,7 +235,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const Divider(color: AppTheme.divider, height: 28),
 
-          // Storage & Cache (Synced across Cloud & Local Storage)
+          // Storage & Cache
           Text(
             'Storage & Cache',
             style: GoogleFonts.poppins(
@@ -241,6 +293,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const Divider(color: AppTheme.divider, height: 28),
 
+          // App Updates Section
+          Text(
+            'Updates',
+            style: GoogleFonts.poppins(
+              color: const Color(0xFF22C55E),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              'Check for Updates',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            subtitle: Text(
+              'Verify if a newer version of Paatufy is available',
+              style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
+            ),
+            trailing: _isCheckingUpdate
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF22C55E)),
+                  )
+                : const Icon(Icons.system_update_rounded, color: Color(0xFF22C55E)),
+            onTap: _manualCheckForUpdate,
+          ),
+          const Divider(color: AppTheme.divider, height: 28),
+
           // Brand Logo & About Info
           Center(
             child: Column(
@@ -283,7 +366,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Version 1.0.1 (Build 2026)',
+                  _currentAppVersion,
                   style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
                 ),
               ],
