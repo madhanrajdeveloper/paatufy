@@ -33,17 +33,16 @@ void main() async {
   }
 
   // Initialize Background Audio Service & Media Notifications
-  final audioHandler = await AudioService.init(
+  final PaatufyAudioHandler audioHandler = await AudioService.init<PaatufyAudioHandler>(
     builder: () => PaatufyAudioHandler(),
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'com.paatufy.audio',
       androidNotificationChannelName: 'Paatufy Playback',
       androidNotificationChannelDescription: 'Music playback notification controls',
-      androidNotificationOngoing: false,
-      androidStopForegroundOnPause: true,
+      androidNotificationOngoing: true,
+      androidStopForegroundOnPause: true, // Satisfies the assert requirement
       androidNotificationIcon: 'drawable/ic_stat_music',
       androidShowNotificationBadge: true,
-      notificationColor: Color(0xFF22C55E),
     ),
   );
 

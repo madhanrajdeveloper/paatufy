@@ -133,16 +133,18 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     if (_currentIndex < 0 || _currentIndex >= _queue.length) return;
     var song = _queue[_currentIndex];
 
-    // Notify OS Media notification controls
+    Uri? parsedArtUri;
+    if (song.artworkUrl != null && song.artworkUrl!.trim().isNotEmpty) {
+      parsedArtUri = Uri.tryParse(song.artworkUrl!.trim());
+    }
+
     mediaItem.add(MediaItem(
       id: song.id,
       album: song.album ?? 'Paatufy Stream',
       title: song.title,
       artist: song.artist,
       duration: Duration(seconds: song.durationSeconds),
-      artUri: song.artworkUrl != null && song.artworkUrl!.isNotEmpty
-          ? Uri.tryParse(song.artworkUrl!)
-          : null,
+      artUri: parsedArtUri,
       extras: {
         'provider': song.provider,
         'providerId': song.providerId,
