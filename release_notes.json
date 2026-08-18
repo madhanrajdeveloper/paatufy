@@ -10,5 +10,6 @@
     "1.0.8": "• Minor bug fixes and performance improvements.",
     "1.0.9": "• Paatufy Stable Release.",
     "1.1.0": "• Paatufy Bug Fix.",
-    "1.1.1": "• Paatufy Bug Fixes."
+    "1.1.1": "• Paatufy Bug Fixes.",
+    "1.1.2": "• Added Network Connectivity Monitoring\n• Added fallback screen if No network is connected."
 }
