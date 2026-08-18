@@ -14,6 +14,7 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
   List<int> _shuffleIndices = [];
   int _currentIndex = -1;
   bool _isShuffle = false;
+  bool _isTransitioning = false;
 
   Timer? _sleepTicker;
   DateTime? _sleepTargetTime;
@@ -215,6 +216,7 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
         await session.setActive(true);
 
         await _player.stop();
+        await _player.seek(Duration.zero);
         await _player.setUrl(stream);
         await _player.play();
       } catch (e) {
@@ -223,31 +225,41 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     }
   }
 
-  void _handleTrackCompletion() {
-    if (_player.loopMode == LoopMode.one) {
-      _player.seek(Duration.zero);
-      _player.play();
-      return;
-    }
+  Future<void> _handleTrackCompletion() async {
+    if (_isTransitioning) return;
+    _isTransitioning = true;
 
-    if (_queue.isEmpty) return;
+    try {
+      if (_player.loopMode == LoopMode.one) {
+        await _player.seek(Duration.zero);
+        await _player.play();
+        return;
+      }
 
-    if (_isShuffle) {
-      final currentPosInShuffle = _shuffleIndices.indexOf(_currentIndex);
-      if (currentPosInShuffle >= 0 && currentPosInShuffle + 1 < _shuffleIndices.length) {
-        _currentIndex = _shuffleIndices[currentPosInShuffle + 1];
+      if (_queue.isEmpty) return;
+
+      if (_isShuffle) {
+        if (_shuffleIndices.isEmpty || _shuffleIndices.length != _queue.length) {
+          _generateShuffleIndices();
+        }
+        final currentPosInShuffle = _shuffleIndices.indexOf(_currentIndex);
+        if (currentPosInShuffle >= 0 && currentPosInShuffle + 1 < _shuffleIndices.length) {
+          _currentIndex = _shuffleIndices[currentPosInShuffle + 1];
+        } else {
+          _generateShuffleIndices();
+          _currentIndex = _shuffleIndices.isNotEmpty ? _shuffleIndices.first : 0;
+        }
       } else {
-        _generateShuffleIndices();
-        _currentIndex = _shuffleIndices.first;
+        if (_currentIndex + 1 < _queue.length) {
+          _currentIndex++;
+        } else {
+          _currentIndex = 0;
+        }
       }
-      _loadAndPlayCurrent();
-    } else {
-      if (_currentIndex + 1 < _queue.length) {
-        _currentIndex++;
-      } else {
-        _currentIndex = 0;
-      }
-      _loadAndPlayCurrent();
+
+      await _loadAndPlayCurrent();
+    } finally {
+      _isTransitioning = false;
     }
   }
 
@@ -259,21 +271,22 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     if (_queue.isEmpty) return;
 
     if (_isShuffle) {
+      if (_shuffleIndices.isEmpty || _shuffleIndices.length != _queue.length) {
+        _generateShuffleIndices();
+      }
       final currentPosInShuffle = _shuffleIndices.indexOf(_currentIndex);
       if (currentPosInShuffle >= 0 && currentPosInShuffle + 1 < _shuffleIndices.length) {
         _currentIndex = _shuffleIndices[currentPosInShuffle + 1];
       } else {
         _generateShuffleIndices();
-        _currentIndex = _shuffleIndices.first;
+        _currentIndex = _shuffleIndices.isNotEmpty ? _shuffleIndices.first : 0;
       }
-      await _loadAndPlayCurrent();
     } else if (_currentIndex + 1 < _queue.length) {
       _currentIndex++;
-      await _loadAndPlayCurrent();
     } else {
       _currentIndex = 0;
-      await _loadAndPlayCurrent();
     }
+    await _loadAndPlayCurrent();
   }
 
   @override
@@ -284,20 +297,21 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     }
 
     if (_isShuffle) {
+      if (_shuffleIndices.isEmpty || _shuffleIndices.length != _queue.length) {
+        _generateShuffleIndices();
+      }
       final currentPosInShuffle = _shuffleIndices.indexOf(_currentIndex);
       if (currentPosInShuffle > 0) {
         _currentIndex = _shuffleIndices[currentPosInShuffle - 1];
       } else {
-        _currentIndex = _shuffleIndices.last;
+        _currentIndex = _shuffleIndices.isNotEmpty ? _shuffleIndices.last : 0;
       }
-      await _loadAndPlayCurrent();
     } else if (_currentIndex > 0) {
       _currentIndex--;
-      await _loadAndPlayCurrent();
     } else {
       _currentIndex = _queue.length - 1;
-      await _loadAndPlayCurrent();
     }
+    await _loadAndPlayCurrent();
   }
 
   Future<void> skipToIndex(int index) async {

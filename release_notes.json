@@ -12,5 +12,6 @@
     "1.1.0": "• Paatufy Bug Fix.",
     "1.1.1": "• Paatufy Bug Fixes.",
     "1.1.2": "• Added Network Connectivity Monitoring\n• Added fallback screen if No network is connected.",
-    "1.1.3": "• Background playback issue fixed for some devices.\n• Added support for Android 13 and above.\n• Added support for Android 14 and above.\n• Added support for iOS 17 and above.\n• Added support for iOS 18 and above\n• Added support for iOS 19 and above."
+    "1.1.3": "• Background playback issue fixed for some devices.\n• Added support for Android 13 and above.\n• Added support for Android 14 and above.\n• Added support for iOS 17 and above.\n• Added support for iOS 18 and above\n• Added support for iOS 19 and above.",
+    "1.1.4": "• Fixed the shuffle playback issue for some devices.\n• Fixed the background playback issue for some devices."
 }
