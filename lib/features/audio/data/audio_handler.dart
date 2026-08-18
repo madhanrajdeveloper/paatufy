@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
@@ -35,7 +36,43 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
   AudioPlayer get player => _player;
 
   PaatufyAudioHandler() {
+    _initAudioSession();
     _initPlayer();
+  }
+
+  /// Configures native Android/iOS audio session to maintain continuous background playback
+  Future<void> _initAudioSession() async {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
+
+    // Pause playback when headphones/Bluetooth disconnect
+    session.becomingNoisyEventStream.listen((_) => pause());
+
+    // Handle system audio focus changes (calls, navigation alerts)
+    session.interruptionEventStream.listen((event) {
+      if (event.begin) {
+        switch (event.type) {
+          case AudioInterruptionType.duck:
+            _player.setVolume(0.5);
+            break;
+          case AudioInterruptionType.pause:
+          case AudioInterruptionType.unknown:
+            pause();
+            break;
+        }
+      } else {
+        switch (event.type) {
+          case AudioInterruptionType.duck:
+            _player.setVolume(1.0);
+            break;
+          case AudioInterruptionType.pause:
+            play();
+            break;
+          case AudioInterruptionType.unknown:
+            break;
+        }
+      }
+    });
   }
 
   void _initPlayer() {
@@ -174,6 +211,9 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
 
     if (stream != null && stream.isNotEmpty) {
       try {
+        final session = await AudioSession.instance;
+        await session.setActive(true);
+
         await _player.stop();
         await _player.setUrl(stream);
         await _player.play();
@@ -393,7 +433,9 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   @override
-  Future<void> play() {
+  Future<void> play() async {
+    final session = await AudioSession.instance;
+    await session.setActive(true);
     _player.setVolume(1.0);
     return _player.play();
   }
@@ -417,7 +459,6 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     _shuffleIndices = [];
     _queueController.add(_queue);
 
-    // Emits null so MiniPlayer and OS notification dismiss cleanly
     mediaItem.add(null);
 
     playbackState.add(playbackState.value.copyWith(
