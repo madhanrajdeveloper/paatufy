@@ -4,9 +4,11 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:paatufy/core/services/app_update_service.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
 import 'package:paatufy/core/widgets/shimmer_loading.dart';
+import 'package:paatufy/core/widgets/update_dialog.dart';
 import 'package:paatufy/features/audio/data/audio_handler.dart';
 import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
 import 'package:paatufy/features/auth/presentation/controllers/auth_controller.dart';
@@ -111,8 +113,24 @@ final homeDiscoveryProvider = FutureProvider.autoDispose<Map<String, dynamic>>((
   };
 });
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final updateInfo = await AppUpdateService.checkForUpdate();
+      if (updateInfo != null && updateInfo.isUpdateAvailable && mounted) {
+        UpdateDialog.show(context, updateInfo);
+      }
+    });
+  }
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -198,7 +216,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final discovery = ref.watch(homeDiscoveryProvider);
     final audioHandler = ref.read(audioHandlerProvider);
     final authState = ref.watch(authControllerProvider);
