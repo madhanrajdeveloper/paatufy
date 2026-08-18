@@ -44,7 +44,7 @@ class AppUpdateInfo {
       latestBuildNumber: latestBuild,
       minSupportedVersion: minVer,
       apkUrl: url,
-      releaseNotes: map['release_notes'] as String? ?? 'Bug fixes and performance improvements.',
+      releaseNotes: map['release_notes'] as String? ?? 'Performance improvements and bug fixes.',
       forceUpdate: isForce,
       isUpdateAvailable: hasNewerVersion,
     );
@@ -89,12 +89,10 @@ class AppUpdateService {
   }
 
   static Future<String> downloadApk(String apkUrl, void Function(double progress) onProgress) async {
-    final directory = await getExternalCacheDirectories();
-    final cacheDir = (directory != null && directory.isNotEmpty)
-        ? directory.first.path
-        : (await getTemporaryDirectory()).path;
+    Directory? externalDir = await getExternalStorageDirectory();
+    String saveDir = externalDir != null ? externalDir.path : (await getApplicationDocumentsDirectory()).path;
 
-    final savePath = '$cacheDir/paatufy_v_update.apk';
+    final savePath = '$saveDir/paatufy_latest_update.apk';
 
     final file = File(savePath);
     if (await file.exists()) {
@@ -104,9 +102,14 @@ class AppUpdateService {
     await _dio.download(
       apkUrl,
       savePath,
+      options: Options(
+        responseType: ResponseType.bytes,
+        followRedirects: true,
+        validateStatus: (status) => status != null && status < 500,
+      ),
       onReceiveProgress: (received, total) {
         if (total > 0) {
-          onProgress(received / total);
+          onProgress((received / total).clamp(0.0, 1.0));
         }
       },
     );
@@ -121,7 +124,7 @@ class AppUpdateService {
       });
       return result ?? false;
     } catch (e) {
-      debugPrint('❌ Native install error: $e');
+      debugPrint('❌ Native install invocation failed: $e');
       return false;
     }
   }
