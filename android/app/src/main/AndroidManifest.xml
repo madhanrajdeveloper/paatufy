@@ -4,6 +4,10 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    
+    <!-- Required for Android 13+ Notification Controls -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
     <application
@@ -46,7 +50,8 @@
         <service 
             android:name="com.ryanheise.audioservice.AudioService"
             android:foregroundServiceType="mediaPlayback"
-            android:exported="true">
+            android:exported="true"
+            android:stopWithTask="true">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
@@ -70,7 +75,6 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
-        <!-- Allows package installer to open APK files -->
         <intent>
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="content"/>
