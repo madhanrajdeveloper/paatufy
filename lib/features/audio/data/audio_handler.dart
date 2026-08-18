@@ -85,7 +85,7 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
         MediaAction.setShuffleMode,
         MediaAction.setRepeatMode,
       },
-      androidCompactActionIndices: const [0, 1, 3],
+      androidCompactActionIndices: const [0, 1, 2],
       processingState: processingState,
       playing: playing,
       updatePosition: _player.position,
@@ -426,5 +426,11 @@ class PaatufyAudioHandler extends BaseAudioHandler with SeekHandler {
     ));
 
     return super.stop();
+  }
+
+  @override
+  Future<void> onTaskRemoved() async {
+    await stop();
+    await super.onTaskRemoved();
   }
 }

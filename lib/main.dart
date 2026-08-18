@@ -40,7 +40,7 @@ void main() async {
       androidNotificationChannelName: 'Paatufy Playback',
       androidNotificationChannelDescription: 'Music playback notification controls',
       androidNotificationOngoing: false,
-      androidStopForegroundOnPause: false,
+      androidStopForegroundOnPause: true,
       androidNotificationIcon: 'drawable/ic_stat_music',
       androidShowNotificationBadge: true,
       notificationColor: Color(0xFF22C55E),
