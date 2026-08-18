@@ -283,7 +283,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Version 1.0.0 (Build 2026)',
+                  'Version 1.0.1 (Build 2026)',
                   style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
                 ),
               ],
