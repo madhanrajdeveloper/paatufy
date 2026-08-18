@@ -4,5 +4,6 @@
     "1.0.2": "• Added support for Google Drive and OneDrive as music sources\n• Fixed issues with background playback on certain devices\n• Improved error handling and user feedback for network issues",
     "1.0.3": "• Added support for local file system as a music source\n• Fixed issues with background playback on certain devices\n• Improved error handling and user feedback for network issues",
     "1.0.4": "• Testing the release update screens.",
-    "1.0.5": "• Testing the release update screens. 2nd time."
+    "1.0.5": "• Testing the release update screens. 2nd time.",
+    "1.0.6": "• Testing the release update screens. 3rd time."
 }
