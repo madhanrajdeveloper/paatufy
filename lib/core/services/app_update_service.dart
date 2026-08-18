@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:ota_update/ota_update.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 class AppUpdateInfo {
   final String latestVersion;
@@ -25,8 +28,8 @@ class AppUpdateInfo {
 
   factory AppUpdateInfo.fromFirestore(Map<String, dynamic> map, String currentVersion, int currentBuild) {
     final latestVer = map['latest_version'] as String? ?? currentVersion;
-    final latestBuild = (map['latest_build_number'] is int) 
-        ? map['latest_build_number'] as int 
+    final latestBuild = (map['latest_build_number'] is int)
+        ? map['latest_build_number'] as int
         : int.tryParse(map['latest_build_number']?.toString() ?? '') ?? currentBuild;
     final minVer = map['min_supported_version'] as String? ?? currentVersion;
     final force = map['force_update'] as bool? ?? false;
@@ -36,16 +39,12 @@ class AppUpdateInfo {
     final bool hasNewerVersion = (versionDiff > 0 || latestBuild > currentBuild) && url.isNotEmpty;
     final bool isForce = force || _compareVersions(currentVersion, minVer) < 0;
 
-    debugPrint('🔍 [UpdateCheck] Local: v$currentVersion (Build $currentBuild) | Remote: v$latestVer (Build $latestBuild)');
-    debugPrint('🔍 [UpdateCheck] APK URL: $url');
-    debugPrint('🔍 [UpdateCheck] isUpdateAvailable: $hasNewerVersion');
-
     return AppUpdateInfo(
       latestVersion: latestVer,
       latestBuildNumber: latestBuild,
       minSupportedVersion: minVer,
       apkUrl: url,
-      releaseNotes: map['release_notes'] as String? ?? 'Performance improvements and bug fixes.',
+      releaseNotes: map['release_notes'] as String? ?? 'Bug fixes and performance improvements.',
       forceUpdate: isForce,
       isUpdateAvailable: hasNewerVersion,
     );
@@ -70,31 +69,47 @@ class AppUpdateInfo {
 
 class AppUpdateService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final Dio _dio = Dio();
 
   static Future<AppUpdateInfo?> checkForUpdate() async {
     try {
       final doc = await _firestore.collection('app_config').doc('version').get();
-      if (!doc.exists || doc.data() == null) {
-        debugPrint('⚠️ [UpdateCheck] Firestore doc "app_config/version" does not exist.');
-        return null;
-      }
+      if (!doc.exists || doc.data() == null) return null;
 
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
       final currentBuild = int.tryParse(packageInfo.buildNumber) ?? 1;
 
       return AppUpdateInfo.fromFirestore(doc.data()!, currentVersion, currentBuild);
-    } catch (e, stack) {
-      debugPrint('❌ [UpdateCheck Error]: $e');
-      debugPrint('$stack');
+    } catch (e) {
+      debugPrint('❌ Error checking for update: $e');
       return null;
     }
   }
 
-  static Stream<OtaEvent> downloadAndInstallApk(String apkUrl) {
-    return OtaUpdate().execute(
+  static Future<String> downloadApk(String apkUrl, void Function(double progress) onProgress) async {
+    final directory = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
+    final savePath = '${directory.path}/paatufy_update.apk';
+
+    final file = File(savePath);
+    if (await file.exists()) {
+      await file.delete();
+    }
+
+    await _dio.download(
       apkUrl,
-      destinationFilename: 'paatufy-update.apk',
+      savePath,
+      onReceiveProgress: (received, total) {
+        if (total != -1) {
+          onProgress(received / total);
+        }
+      },
     );
+
+    return savePath;
+  }
+
+  static Future<OpenResult> installApk(String filePath) async {
+    return await OpenFilex.open(filePath, type: 'application/vnd.android.package-archive');
   }
 }

@@ -1,7 +1,6 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:ota_update/ota_update.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:paatufy/core/services/app_update_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -30,22 +29,15 @@ class _UpdateDialogState extends State<UpdateDialog> {
   bool _isDownloading = false;
   double _progress = 0.0;
   String _statusText = '';
-  StreamSubscription<OtaEvent>? _otaSubscription;
 
-  @override
-  void dispose() {
-    _otaSubscription?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _startDownload() async {
-    // 1. Verify "Install unknown apps" permission
-    final installPermission = await Permission.requestInstallPackages.status;
-    if (!installPermission.isGranted) {
-      final requested = await Permission.requestInstallPackages.request();
-      if (!requested.isGranted) {
+  Future<void> _startDownloadAndInstall() async {
+    // 1. Check Install Packages Permission on Android
+    final status = await Permission.requestInstallPackages.status;
+    if (!status.isGranted) {
+      final req = await Permission.requestInstallPackages.request();
+      if (!req.isGranted) {
         setState(() {
-          _statusText = 'Enable "Allow from this source" to install updates.';
+          _statusText = 'Please allow permission to install updates.';
         });
         await openAppSettings();
         return;
@@ -58,48 +50,43 @@ class _UpdateDialogState extends State<UpdateDialog> {
       _progress = 0.0;
     });
 
-    _otaSubscription = AppUpdateService.downloadAndInstallApk(widget.updateInfo.apkUrl).listen(
-      (OtaEvent event) {
-        switch (event.status) {
-          case OtaStatus.DOWNLOADING:
+    try {
+      final filePath = await AppUpdateService.downloadApk(
+        widget.updateInfo.apkUrl,
+        (progress) {
+          if (mounted) {
             setState(() {
-              final parsed = double.tryParse(event.value ?? '0') ?? 0;
-              _progress = (parsed / 100).clamp(0.0, 1.0);
-              _statusText = 'Downloading: ${parsed.toInt()}%';
+              _progress = progress;
+              _statusText = 'Downloading: ${(progress * 100).toInt()}%';
             });
-            break;
-          case OtaStatus.INSTALLING:
-            setState(() {
-              _statusText = 'Launching package installer...';
-            });
-            break;
-          case OtaStatus.ALREADY_RUNNING_ERROR:
-            setState(() {
-              _statusText = 'Download already in progress.';
-            });
-            break;
-          case OtaStatus.PERMISSION_NOT_GRANTED_ERROR:
-            setState(() {
-              _isDownloading = false;
-              _statusText = 'Permission denied to install APK.';
-            });
-            openAppSettings();
-            break;
-          default:
-            setState(() {
-              _isDownloading = false;
-              _statusText = 'Download failed. Please try again.';
-            });
-            break;
+          }
+        },
+      );
+
+      if (mounted) {
+        setState(() {
+          _statusText = 'Opening package installer...';
+        });
+      }
+
+      final result = await AppUpdateService.installApk(filePath);
+
+      if (result.type != ResultType.done) {
+        if (mounted) {
+          setState(() {
+            _isDownloading = false;
+            _statusText = 'Could not launch installer (${result.message}). Tap to retry.';
+          });
         }
-      },
-      onError: (err) {
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
           _isDownloading = false;
-          _statusText = 'Failed to connect to update server.';
+          _statusText = 'Download failed. Please check connection.';
         });
-      },
-    );
+      }
+    }
   }
 
   @override
@@ -207,7 +194,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                    onPressed: _isDownloading ? null : _startDownload,
+                    onPressed: _isDownloading ? null : _startDownloadAndInstall,
                     child: Text(
                       _isDownloading ? 'Updating...' : 'Update Now',
                       style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13),

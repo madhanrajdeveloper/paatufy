@@ -1,7 +1,7 @@
 name: paatufy
 description: "Open Music Streaming & Personal Music Management Application"
 publish_to: "none"
-version: 1.0.2+3
+version: 1.0.3+4
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
@@ -25,7 +25,6 @@ dependencies:
   # Local Persistence
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  path_provider: ^2.1.2
 
   # Storage & Data Management
   firebase_core: ^3.1.0
@@ -46,7 +45,8 @@ dependencies:
 
   # In-App Update Packages
   package_info_plus: ^8.3.1
-  ota_update: ^7.1.0
+  path_provider: ^2.1.3
+  open_filex: ^4.5.0
   permission_handler: ^11.3.1
 
 dev_dependencies:
