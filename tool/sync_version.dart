@@ -1,12 +1,22 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:googleapis_auth/auth_io.dart';
 import 'package:http/http.dart' as http;
 
-// Enter your Firebase Project ID (from Firebase Console Settings)
-const String firebaseProjectId = 'paatufy-15e40';
-
 void main(List<String> args) async {
-  // 1. Read version from pubspec.yaml
+  // 1. Check for Service Account Key
+  final serviceAccountFile = File('tool/service-account.json');
+  if (!serviceAccountFile.existsSync()) {
+    print('❌ Error: "tool/service-account.json" not found.');
+    exit(1);
+  }
+
+  // 2. Parse Project ID and Service Account Credentials
+  final serviceAccountData = jsonDecode(serviceAccountFile.readAsStringSync());
+  final String projectId = serviceAccountData['project_id'];
+  final credentials = ServiceAccountCredentials.fromJson(serviceAccountData);
+
+  // 3. Read version from pubspec.yaml
   final pubspecFile = File('pubspec.yaml');
   if (!pubspecFile.existsSync()) {
     print('❌ Error: pubspec.yaml not found.');
@@ -24,9 +34,9 @@ void main(List<String> args) async {
   final String version = versionMatch.group(1)!;
   final int buildNumber = int.tryParse(versionMatch.group(2) ?? '1') ?? 1;
 
-  // 2. Read Release Notes
+  // 4. Read Release Notes
   final notesFile = File('release_notes.json');
-  String releaseNotes = '• Performance enhancements and bug fixes.';
+  String releaseNotes = '• Performance improvements and bug fixes.';
 
   if (notesFile.existsSync()) {
     final Map<String, dynamic> notesMap = jsonDecode(notesFile.readAsStringSync());
@@ -35,18 +45,21 @@ void main(List<String> args) async {
     }
   }
 
-  // 3. Optional APK URL passed via CLI argument
   String? apkUrl;
-  if (args.isNotEmpty) {
-    apkUrl = args[0];
+  if (args.isNotEmpty && args[0].trim().isNotEmpty) {
+    apkUrl = args[0].trim();
   }
 
-  print('🚀 Syncing Paatufy v$version+$buildNumber to Firestore...');
+  final scopes = ['https://www.googleapis.com/auth/datastore'];
+  final authClient = await clientViaServiceAccount(credentials, scopes);
 
-  // 4. Update Firestore via REST API (document: app_config/version)
-  final firestoreUrl = Uri.parse(
-    'https://firestore.googleapis.com/v1/projects/$firebaseProjectId/databases/(default)/documents/app_config/version',
-  );
+  // Build the field list and update masks dynamically
+  final List<String> maskParams = [
+    'updateMask.fieldPaths=latest_version',
+    'updateMask.fieldPaths=latest_build_number',
+    'updateMask.fieldPaths=release_notes',
+    'updateMask.fieldPaths=updated_at',
+  ];
 
   final Map<String, dynamic> fields = {
     'latest_version': {'stringValue': version},
@@ -55,20 +68,32 @@ void main(List<String> args) async {
     'updated_at': {'timestampValue': DateTime.now().toUtc().toIso8601String()},
   };
 
-  if (apkUrl != null && apkUrl.isNotEmpty) {
+  if (apkUrl != null) {
+    maskParams.add('updateMask.fieldPaths=apk_url');
     fields['apk_url'] = {'stringValue': apkUrl};
+    print('🚀 Syncing Paatufy v$version+$buildNumber with APK URL to Firestore...');
+  } else {
+    print('🚀 Syncing Paatufy v$version+$buildNumber metadata (keeping existing APK URL) to Firestore...');
   }
 
-  final response = await http.patch(
-    firestoreUrl,
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({'fields': fields}),
+  final firestoreUrl = Uri.parse(
+    'https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/app_config/version?${maskParams.join('&')}',
   );
 
-  if (response.statusCode == 200) {
-    print('✅ Successfully updated Firestore database with version $version ($buildNumber)!');
-  } else {
-    print('❌ Failed to update Firestore: ${response.statusCode}');
-    print(response.body);
+  try {
+    final response = await authClient.patch(
+      firestoreUrl,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'fields': fields}),
+    );
+
+    if (response.statusCode == 200) {
+      print('✅ Firestore updated successfully!');
+    } else {
+      print('❌ Failed to update Firestore: ${response.statusCode}');
+      print(response.body);
+    }
+  } finally {
+    authClient.close();
   }
 }

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:ota_update/ota_update.dart';
 import 'package:paatufy/core/services/app_update_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class UpdateDialog extends StatefulWidget {
   final AppUpdateInfo updateInfo;
@@ -37,7 +38,20 @@ class _UpdateDialogState extends State<UpdateDialog> {
     super.dispose();
   }
 
-  void _startDownload() {
+  Future<void> _startDownload() async {
+    // 1. Verify "Install unknown apps" permission
+    final installPermission = await Permission.requestInstallPackages.status;
+    if (!installPermission.isGranted) {
+      final requested = await Permission.requestInstallPackages.request();
+      if (!requested.isGranted) {
+        setState(() {
+          _statusText = 'Enable "Allow from this source" to install updates.';
+        });
+        await openAppSettings();
+        return;
+      }
+    }
+
     setState(() {
       _isDownloading = true;
       _statusText = 'Starting download...';
@@ -56,19 +70,20 @@ class _UpdateDialogState extends State<UpdateDialog> {
             break;
           case OtaStatus.INSTALLING:
             setState(() {
-              _statusText = 'Launching installer...';
+              _statusText = 'Launching package installer...';
             });
             break;
           case OtaStatus.ALREADY_RUNNING_ERROR:
             setState(() {
-              _statusText = 'Download already running.';
+              _statusText = 'Download already in progress.';
             });
             break;
           case OtaStatus.PERMISSION_NOT_GRANTED_ERROR:
             setState(() {
               _isDownloading = false;
-              _statusText = 'Storage permission denied.';
+              _statusText = 'Permission denied to install APK.';
             });
+            openAppSettings();
             break;
           default:
             setState(() {
@@ -78,7 +93,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
             break;
         }
       },
-      onError: (_) {
+      onError: (err) {
         setState(() {
           _isDownloading = false;
           _statusText = 'Failed to connect to update server.';
@@ -157,6 +172,16 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 child: Text(
                   _statusText,
                   style: GoogleFonts.poppins(fontSize: 11, color: AppTheme.textSecondary),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (_statusText.isNotEmpty && !_isDownloading) ...[
+              Center(
+                child: Text(
+                  _statusText,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 11, color: Colors.amberAccent),
                 ),
               ),
               const SizedBox(height: 12),

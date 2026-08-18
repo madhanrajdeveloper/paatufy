@@ -98,3 +98,5 @@ app.*.map.json
 .env
 *.env
 .env.*
+
+tool/service-account.json
