@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:open_filex/open_filex.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -70,6 +70,7 @@ class AppUpdateInfo {
 class AppUpdateService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final Dio _dio = Dio();
+  static const MethodChannel _installerChannel = MethodChannel('com.paatufy.paatufy/installer');
 
   static Future<AppUpdateInfo?> checkForUpdate() async {
     try {
@@ -88,8 +89,12 @@ class AppUpdateService {
   }
 
   static Future<String> downloadApk(String apkUrl, void Function(double progress) onProgress) async {
-    final directory = await getExternalStorageDirectory() ?? await getApplicationDocumentsDirectory();
-    final savePath = '${directory.path}/paatufy_update.apk';
+    final directory = await getExternalCacheDirectories();
+    final cacheDir = (directory != null && directory.isNotEmpty)
+        ? directory.first.path
+        : (await getTemporaryDirectory()).path;
+
+    final savePath = '$cacheDir/paatufy_v_update.apk';
 
     final file = File(savePath);
     if (await file.exists()) {
@@ -100,7 +105,7 @@ class AppUpdateService {
       apkUrl,
       savePath,
       onReceiveProgress: (received, total) {
-        if (total != -1) {
+        if (total > 0) {
           onProgress(received / total);
         }
       },
@@ -109,7 +114,15 @@ class AppUpdateService {
     return savePath;
   }
 
-  static Future<OpenResult> installApk(String filePath) async {
-    return await OpenFilex.open(filePath, type: 'application/vnd.android.package-archive');
+  static Future<bool> installApk(String filePath) async {
+    try {
+      final result = await _installerChannel.invokeMethod<bool>('installApk', {
+        'filePath': filePath,
+      });
+      return result ?? false;
+    } catch (e) {
+      debugPrint('❌ Native install error: $e');
+      return false;
+    }
   }
 }

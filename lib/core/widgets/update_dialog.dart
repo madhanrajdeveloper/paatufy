@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:paatufy/core/services/app_update_service.dart';
 import 'package:paatufy/core/theme/app_theme.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -31,7 +30,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
   String _statusText = '';
 
   Future<void> _startDownloadAndInstall() async {
-    // 1. Check Install Packages Permission on Android
+    // 1. Verify "Install unknown apps" permission
     final status = await Permission.requestInstallPackages.status;
     if (!status.isGranted) {
       final req = await Permission.requestInstallPackages.request();
@@ -65,25 +64,23 @@ class _UpdateDialogState extends State<UpdateDialog> {
 
       if (mounted) {
         setState(() {
-          _statusText = 'Opening package installer...';
+          _statusText = 'Launching installer...';
         });
       }
 
-      final result = await AppUpdateService.installApk(filePath);
+      final success = await AppUpdateService.installApk(filePath);
 
-      if (result.type != ResultType.done) {
-        if (mounted) {
-          setState(() {
-            _isDownloading = false;
-            _statusText = 'Could not launch installer (${result.message}). Tap to retry.';
-          });
-        }
+      if (!success && mounted) {
+        setState(() {
+          _isDownloading = false;
+          _statusText = 'Could not launch installer. Tap Update to retry.';
+        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _statusText = 'Download failed. Please check connection.';
+          _statusText = 'Download failed. Check your internet connection.';
         });
       }
     }
