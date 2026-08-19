@@ -97,7 +97,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                           size: const Size(320, 320),
                           painter: WaterDropRipplePainter(
                             animationValue: _rippleController.value,
-                            rippleColor: const Color(0xFF22C55E),
+                            rippleColor: AppTheme.primary,
                             baseRadius: 60.0,
                           ),
                         );
@@ -112,7 +112,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF22C55E).withOpacity(0.45),
+                              color: AppTheme.primary.withOpacity(0.45),
                               blurRadius: 28,
                               spreadRadius: 4,
                             ),
@@ -120,14 +120,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                         ),
                         child: ClipOval(
                           child: Image.asset(
-                            'assets/images/paatufy.png',
+                            'assets/images/paatufy-purple.png',
                             width: 120,
                             height: 120,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => const Icon(
                               Icons.music_note_rounded,
                               size: 72,
-                              color: Color(0xFF22C55E),
+                              color: AppTheme.primary,
                             ),
                           ),
                         ),
@@ -146,7 +146,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
                         fontSize: 34,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 1.5,
-                        color: const Color(0xFF22C55E),
+                        color: AppTheme.primary,
                       ),
                     ),
                     TextSpan(

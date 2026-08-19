@@ -106,10 +106,10 @@ class ProfileScreen extends ConsumerWidget {
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: CircleAvatar(
-                        backgroundColor: const Color(0xFF22C55E),
+                        backgroundColor: AppTheme.primary,
                         backgroundImage: user.photoUrl != null ? CachedNetworkImageProvider(user.photoUrl!) : null,
                         child: user.photoUrl == null
-                            ? Text(user.name[0].toUpperCase(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.black))
+                            ? Text(user.name[0].toUpperCase(), style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white))
                             : null,
                       ),
                       title: Row(
@@ -127,12 +127,12 @@ class ProfileScreen extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF22C55E).withOpacity(0.2),
+                                color: AppTheme.primary.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 'ACTIVE',
-                                style: GoogleFonts.poppins(fontSize: 9, color: const Color(0xFF22C55E), fontWeight: FontWeight.bold),
+                                style: GoogleFonts.poppins(fontSize: 9, color: AppTheme.primaryPurple, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ],
@@ -180,7 +180,7 @@ class ProfileScreen extends ConsumerWidget {
                     width: 40,
                     height: 40,
                     decoration: const BoxDecoration(color: AppTheme.surface, shape: BoxShape.circle),
-                    child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF22C55E)),
+                    child: const Icon(Icons.person_add_alt_1_rounded, color: AppTheme.primaryPurple),
                   ),
                   title: Text('Add another account', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
                   onTap: () {
@@ -220,7 +220,7 @@ class ProfileScreen extends ConsumerWidget {
         title: Text('Profile & Summary', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.switch_account_rounded, color: Color(0xFF22C55E)),
+            icon: const Icon(Icons.switch_account_rounded, color: AppTheme.primaryPurple),
             tooltip: 'Switch Account',
             onPressed: () => _showSwitchAccountModal(context, ref),
           ),
@@ -233,31 +233,44 @@ class ProfileScreen extends ConsumerWidget {
           Center(
             child: Column(
               children: [
-                CircleAvatar(
-                  radius: 46,
-                  backgroundColor: const Color(0xFF22C55E),
-                  backgroundImage: user?.photoUrl != null ? CachedNetworkImageProvider(user!.photoUrl!) : null,
-                  child: user?.photoUrl == null
-                      ? Text(
-                          (user?.name.isNotEmpty == true) ? user!.name[0].toUpperCase() : 'U',
-                          style: GoogleFonts.poppins(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.black),
-                        )
-                      : null,
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: AppTheme.brandGradient,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withOpacity(0.35),
+                        blurRadius: 16,
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 46,
+                    backgroundColor: AppTheme.surfaceElevated,
+                    backgroundImage: user?.photoUrl != null ? CachedNetworkImageProvider(user!.photoUrl!) : null,
+                    child: user?.photoUrl == null
+                        ? Text(
+                            (user?.name.isNotEmpty == true) ? user!.name[0].toUpperCase() : 'U',
+                            style: GoogleFonts.poppins(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white),
+                          )
+                        : null,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Text(user?.name ?? 'Paatufy Listener', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
                 Text(user?.email ?? 'listener@paatufy.com', style: GoogleFonts.poppins(fontSize: 13, color: AppTheme.textSecondary)),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF22C55E).withOpacity(0.15),
+                    color: AppTheme.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF22C55E), width: 0.5),
+                    border: Border.all(color: AppTheme.primary.withOpacity(0.4), width: 0.8),
                   ),
                   child: Text(
                     '${user?.authProvider.toUpperCase() ?? 'EMAIL'} VERIFIED',
-                    style: GoogleFonts.poppins(fontSize: 10, color: const Color(0xFF22C55E), fontWeight: FontWeight.bold),
+                    style: GoogleFonts.poppins(fontSize: 10, color: AppTheme.primaryPurple, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -277,7 +290,7 @@ class ProfileScreen extends ConsumerWidget {
             childAspectRatio: 1.5,
             children: [
               _buildSummaryCard('Liked Songs', '$likedCount tracks', Icons.favorite_rounded, const Color(0xFFE91E63)),
-              _buildSummaryCard('Playlists', '$playlistCount created', Icons.queue_music_rounded, const Color(0xFF22C55E)),
+              _buildSummaryCard('Playlists', '$playlistCount created', Icons.queue_music_rounded, AppTheme.primaryPurple),
               _buildSummaryCard('Saved Albums', '$savedAlbumCount saved', Icons.album_rounded, const Color(0xFF3B82F6)),
               _buildSummaryCard('Estimated Time', _formatListeningTime(totalListeningSecs), Icons.schedule_rounded, const Color(0xFFF59E0B)),
             ],
@@ -289,7 +302,11 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppTheme.surfaceElevated, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceElevated,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.divider, width: 0.6),
+            ),
             child: Column(
               children: [
                 _buildDetailRow('User ID', user?.id ?? 'guest'),
@@ -331,7 +348,11 @@ class ProfileScreen extends ConsumerWidget {
   Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppTheme.surfaceElevated, borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceElevated,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppTheme.divider, width: 0.6),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,

@@ -67,7 +67,7 @@ class LikedSongsScreen extends ConsumerWidget {
                       Container(
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Color(0xFF4A148C), Color(0xFF22C55E)],
+                            colors: [Color(0xFF4A148C), AppTheme.primary],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -119,7 +119,7 @@ class LikedSongsScreen extends ConsumerWidget {
                       IconButton(
                         icon: Icon(
                           Icons.shuffle_rounded,
-                          color: isShuffle ? const Color(0xFF22C55E) : AppTheme.textSecondary,
+                          color: isShuffle ? AppTheme.primary : AppTheme.textSecondary,
                           size: 26,
                         ),
                         onPressed: () {
@@ -135,7 +135,7 @@ class LikedSongsScreen extends ConsumerWidget {
                       // Play/Pause Button
                       CircleAvatar(
                         radius: 28,
-                        backgroundColor: const Color(0xFF22C55E),
+                        backgroundColor: AppTheme.primary,
                         child: IconButton(
                           icon: Icon(
                             isCurrentlyPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
@@ -206,7 +206,7 @@ class LikedSongsScreen extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: isCurrentTrack ? const Color(0xFF22C55E) : AppTheme.textPrimary,
+                            color: isCurrentTrack ? AppTheme.primary : AppTheme.textPrimary,
                             fontWeight: isCurrentTrack ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
@@ -220,7 +220,7 @@ class LikedSongsScreen extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.favorite_rounded, color: Color(0xFF22C55E), size: 22),
+                              icon: const Icon(Icons.favorite_rounded, color: AppTheme.primary, size: 22),
                               onPressed: () => HiveService.toggleLikeSong(song),
                             ),
                             IconButton(
@@ -230,7 +230,7 @@ class LikedSongsScreen extends ConsumerWidget {
                             IconButton(
                               icon: Icon(
                                 (isCurrentTrack && isPlaying) ? Icons.equalizer_rounded : Icons.play_arrow_rounded,
-                                color: isCurrentTrack ? const Color(0xFF22C55E) : AppTheme.textSecondary,
+                                color: isCurrentTrack ? AppTheme.primary : AppTheme.textSecondary,
                                 size: 24,
                               ),
                               onPressed: () => audioHandler.playQueue(likedSongs, initialIndex: index),

@@ -37,7 +37,7 @@ class LibraryScreen extends StatelessWidget {
             child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF22C55E)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
             onPressed: () async {
               if (controller.text.trim().isNotEmpty) {
                 final playlist = await HiveService.createUserPlaylist(controller.text);
@@ -67,7 +67,7 @@ class LibraryScreen extends StatelessWidget {
         title: const Text('Your Library', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.download_rounded, color: Color(0xFF22C55E)),
+            icon: const Icon(Icons.download_rounded, color: AppTheme.primary),
             tooltip: 'Import from Spotify',
             onPressed: () => SpotifyImportModal.show(context),
           ),
@@ -92,7 +92,7 @@ class LibraryScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(6),
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF4A148C), Color(0xFF22C55E)],
+                      colors: [Color(0xFF4A148C), AppTheme.primary],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -134,7 +134,7 @@ class LibraryScreen extends StatelessWidget {
                                 color: Colors.black,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.download_done_rounded, color: Color(0xFF22C55E), size: 12),
+                              child: const Icon(Icons.download_done_rounded, color: AppTheme.primary, size: 12),
                             ),
                           ),
                       ],
@@ -146,12 +146,12 @@ class LibraryScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF22C55E).withOpacity(0.15),
+                              color: AppTheme.primary.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(3),
                             ),
                             child: const Text(
                               'Spotify',
-                              style: TextStyle(fontSize: 10, color: Color(0xFF22C55E), fontWeight: FontWeight.bold),
+                              style: TextStyle(fontSize: 10, color: AppTheme.primary, fontWeight: FontWeight.bold),
                             ),
                           ),
                           const SizedBox(width: 6),

@@ -18,23 +18,23 @@ import 'package:permission_handler/permission_handler.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Lock orientation strictly to portrait mode
+  // 1. Lock screen orientation strictly to portrait
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
 
-  // Initialize Firebase Cloud Backend
+  // 2. Initialize Firebase Cloud Backend (Auth, Remote Config)
   await Firebase.initializeApp();
 
-  // Initialize Local Hive Storage & Restore Authenticated Session
+  // 3. Initialize Local Hive Storage (Local Playlists, Auth Session, History)
   await HiveService.init();
 
-  // Request Notification Permission for Android 13+
+  // 4. Request notification permissions for Android 13+ media controls
   if (Platform.isAndroid) {
     await Permission.notification.request();
   }
 
-  // Initialize Background Audio Service & Media Notifications
+  // 5. Initialize Background Audio Service & OS Media Notifications
   final PaatufyAudioHandler audioHandler = await AudioService.init<PaatufyAudioHandler>(
     builder: () => PaatufyAudioHandler(),
     config: const AudioServiceConfig(
@@ -48,12 +48,14 @@ void main() async {
     ),
   );
 
+  // 6. Connect high-bitrate audio stream resolver
   final jioSaavnProvider = JioSaavnProvider(Dio());
   audioHandler.streamResolver = (song) => jioSaavnProvider.resolveSongStreamUrl(
         song.providerId,
         songTitle: song.title,
       );
 
+  // 7. Start App wrapped with Riverpod ProviderScope
   runApp(
     ProviderScope(
       overrides: [
@@ -69,14 +71,16 @@ class PaatufyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch real-time network connectivity state
     final connectivityAsync = ref.watch(connectivityProvider);
 
     return MaterialApp.router(
       title: 'Paatufy',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.darkTheme, // Global theme from AppTheme
       routerConfig: appRouter,
       builder: (context, child) {
+        // Render offline fallback screen when internet is completely disconnected
         return connectivityAsync.when(
           data: (results) {
             final isOffline = results.every((r) => r == ConnectivityResult.none);

@@ -116,14 +116,14 @@ class _MiniPlayerState extends ConsumerState<MiniPlayer> {
                                               width: 44,
                                               height: 44,
                                               color: AppTheme.surfaceElevated,
-                                              child: const Icon(Icons.music_note_rounded, color: Color(0xFF22C55E)),
+                                              child: const Icon(Icons.music_note_rounded, color: AppTheme.primary),
                                             ),
                                           )
                                         : Container(
                                             width: 44,
                                             height: 44,
                                             color: AppTheme.surfaceElevated,
-                                            child: const Icon(Icons.music_note_rounded, color: Color(0xFF22C55E)),
+                                            child: const Icon(Icons.music_note_rounded, color: AppTheme.primary),
                                           ),
                                   ),
                                   const SizedBox(width: 10),
@@ -176,7 +176,7 @@ class _MiniPlayerState extends ConsumerState<MiniPlayer> {
                                       return IconButton(
                                         icon: Icon(
                                           isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                          color: isLiked ? const Color(0xFF22C55E) : AppTheme.textSecondary,
+                                          color: isLiked ? AppTheme.primary : AppTheme.textSecondary,
                                           size: 20,
                                         ),
                                         onPressed: () {
@@ -236,7 +236,7 @@ class _MiniPlayerState extends ConsumerState<MiniPlayer> {
                                 value: progress,
                                 minHeight: 2.5,
                                 backgroundColor: Colors.white.withOpacity(0.08),
-                                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF22C55E)),
+                                valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
                               ),
                             ),
                           ],

@@ -134,7 +134,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Text(
             'Audio Quality',
             style: GoogleFonts.poppins(
-              color: const Color(0xFF22C55E),
+              color: AppTheme.primary,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
@@ -181,7 +181,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             value: _streamOnWifiOnly,
-            activeColor: const Color(0xFF22C55E),
+            activeColor: AppTheme.primary,
             onChanged: (val) {
               setState(() => _streamOnWifiOnly = val);
               _updateSetting(streamOnWifiOnly: val);
@@ -193,7 +193,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Text(
             'Playback',
             style: GoogleFonts.poppins(
-              color: const Color(0xFF22C55E),
+              color: AppTheme.primary,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
@@ -210,7 +210,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
             ),
             value: _gaplessPlayback,
-            activeColor: const Color(0xFF22C55E),
+            activeColor: AppTheme.primary,
             onChanged: (val) {
               setState(() => _gaplessPlayback = val);
               _updateSetting(gaplessPlayback: val);
@@ -227,7 +227,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 12),
             ),
             value: _normalizeVolume,
-            activeColor: const Color(0xFF22C55E),
+            activeColor: AppTheme.primary,
             onChanged: (val) {
               setState(() => _normalizeVolume = val);
               _updateSetting(normalizeVolume: val);
@@ -239,7 +239,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Text(
             'Storage & Cache',
             style: GoogleFonts.poppins(
-              color: const Color(0xFF22C55E),
+              color: AppTheme.primary,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
@@ -297,7 +297,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Text(
             'Updates',
             style: GoogleFonts.poppins(
-              color: const Color(0xFF22C55E),
+              color: AppTheme.primary,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
@@ -317,9 +317,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF22C55E)),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
                   )
-                : const Icon(Icons.system_update_rounded, color: Color(0xFF22C55E)),
+                : const Icon(Icons.system_update_rounded, color: AppTheme.primary),
             onTap: _manualCheckForUpdate,
           ),
           const Divider(color: AppTheme.divider, height: 28),
@@ -330,14 +330,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 ClipOval(
                   child: Image.asset(
-                    'assets/images/paatufy.png',
+                    'assets/images/paatufy-purple.png',
                     width: 52,
                     height: 52,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => const Icon(
                       Icons.music_note_rounded,
                       size: 40,
-                      color: Color(0xFF22C55E),
+                      color: AppTheme.primary,
                     ),
                   ),
                 ),
@@ -350,7 +350,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF22C55E),
+                          color: AppTheme.primary,
                         ),
                       ),
                       TextSpan(

@@ -150,18 +150,18 @@ class UserPlaylistScreen extends ConsumerWidget {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF22C55E).withOpacity(0.15),
+                                      color: AppTheme.primary.withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(color: const Color(0xFF22C55E), width: 0.5),
+                                      border: Border.all(color: AppTheme.primary, width: 0.5),
                                     ),
                                     child: const Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.download_done_rounded, size: 12, color: Color(0xFF22C55E)),
+                                        Icon(Icons.download_done_rounded, size: 12, color: AppTheme.primary),
                                         SizedBox(width: 3),
                                         Text(
                                           'Spotify Import',
-                                          style: TextStyle(fontSize: 10, color: Color(0xFF22C55E), fontWeight: FontWeight.bold),
+                                          style: TextStyle(fontSize: 10, color: AppTheme.primary, fontWeight: FontWeight.bold),
                                         ),
                                       ],
                                     ),
@@ -182,7 +182,7 @@ class UserPlaylistScreen extends ConsumerWidget {
                       IconButton(
                         icon: Icon(
                           Icons.shuffle_rounded,
-                          color: isShuffle ? const Color(0xFF22C55E) : AppTheme.textSecondary,
+                          color: isShuffle ? AppTheme.primary : AppTheme.textSecondary,
                           size: 26,
                         ),
                         onPressed: () {
@@ -196,7 +196,7 @@ class UserPlaylistScreen extends ConsumerWidget {
                       const SizedBox(width: 8),
                       CircleAvatar(
                         radius: 28,
-                        backgroundColor: const Color(0xFF22C55E),
+                        backgroundColor: AppTheme.primary,
                         child: IconButton(
                           icon: Icon(
                             isCurrentlyPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
@@ -252,7 +252,7 @@ class UserPlaylistScreen extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: isCurrentTrack ? const Color(0xFF22C55E) : AppTheme.textPrimary,
+                            color: isCurrentTrack ? AppTheme.primary : AppTheme.textPrimary,
                             fontWeight: isCurrentTrack ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
@@ -276,7 +276,7 @@ class UserPlaylistScreen extends ConsumerWidget {
                             IconButton(
                               icon: Icon(
                                 (isCurrentTrack && isPlaying) ? Icons.equalizer_rounded : Icons.play_arrow_rounded,
-                                color: isCurrentTrack ? const Color(0xFF22C55E) : AppTheme.textSecondary,
+                                color: isCurrentTrack ? AppTheme.primary : AppTheme.textSecondary,
                                 size: 24,
                               ),
                               onPressed: () => audioHandler.playQueue(tracks, initialIndex: index),

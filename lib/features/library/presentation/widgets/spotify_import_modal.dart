@@ -146,7 +146,7 @@ class _SpotifyImportModalState extends ConsumerState<SpotifyImportModal> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Imported ${resolvedSongs.length} tracks from Spotify!'),
-          backgroundColor: const Color(0xFF22C55E),
+          backgroundColor: AppTheme.primary,
         ),
       );
     }
@@ -181,10 +181,10 @@ class _SpotifyImportModalState extends ConsumerState<SpotifyImportModal> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF22C55E).withOpacity(0.15),
+                  color: AppTheme.primary.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.download_rounded, color: Color(0xFF22C55E), size: 24),
+                child: const Icon(Icons.download_rounded, color: AppTheme.primary, size: 24),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -217,7 +217,7 @@ class _SpotifyImportModalState extends ConsumerState<SpotifyImportModal> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.content_paste_rounded, color: Color(0xFF22C55E), size: 20),
+                icon: const Icon(Icons.content_paste_rounded, color: AppTheme.primary, size: 20),
                 onPressed: _pasteFromClipboard,
               ),
             ),
@@ -229,7 +229,7 @@ class _SpotifyImportModalState extends ConsumerState<SpotifyImportModal> {
               child: LinearProgressIndicator(
                 value: _progress,
                 backgroundColor: AppTheme.surface,
-                color: const Color(0xFF22C55E),
+                color: AppTheme.primary,
                 minHeight: 6,
               ),
             ),
@@ -247,7 +247,7 @@ class _SpotifyImportModalState extends ConsumerState<SpotifyImportModal> {
                 ),
                 Text(
                   '${(_progress * 100).toInt()}%',
-                  style: const TextStyle(color: Color(0xFF22C55E), fontWeight: FontWeight.bold, fontSize: 12),
+                  style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 12),
                 ),
               ],
             ),
@@ -258,7 +258,7 @@ class _SpotifyImportModalState extends ConsumerState<SpotifyImportModal> {
             height: 48,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF22C55E),
+                backgroundColor: AppTheme.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: _isImporting ? null : _startImport,

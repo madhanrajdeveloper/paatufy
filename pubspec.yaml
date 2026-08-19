@@ -66,12 +66,12 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/paatufy.png"
+  image_path: "assets/images/paatufy_lancher_icon.png"
   min_sdk_android: 21
   adaptive_icon_background: "#000000"
-  adaptive_icon_foreground: "assets/images/paatufy.png"
+  adaptive_icon_foreground: "assets/images/paatufy_lancher_icon.png"
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/paatufy.png
+    - assets/images/paatufy-purple.png

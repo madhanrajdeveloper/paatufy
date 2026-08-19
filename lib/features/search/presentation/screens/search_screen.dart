@@ -252,7 +252,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   controller: _searchController,
                   focusNode: _focusNode,
                   style: GoogleFonts.poppins(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-                  cursorColor: const Color(0xFF22C55E),
+                  cursorColor: AppTheme.primary,
                   decoration: InputDecoration(
                     hintText: 'Search songs, albums, artists...',
                     hintStyle: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 14),
@@ -293,10 +293,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       duration: const Duration(milliseconds: 180),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF22C55E) : const Color(0xFF181E24),
+                        color: isSelected ? AppTheme.primary : const Color(0xFF181E24),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: isSelected ? const Color(0xFF22C55E) : Colors.white.withOpacity(0.12),
+                          color: isSelected ? AppTheme.primary : Colors.white.withOpacity(0.12),
                           width: 1,
                         ),
                       ),
@@ -642,7 +642,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.poppins(
-                color: isCurrent ? const Color(0xFF22C55E) : Colors.white,
+                color: isCurrent ? AppTheme.primary : Colors.white,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),

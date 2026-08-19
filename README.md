@@ -1,7 +1,7 @@
 # 🎵 Paatufy
 
 <p align="center">
-  <img src="assets/images/Logo-Rounded.png" alt="Paatufy Logo" width="120" height="120" style="border-radius: 50%;">
+  <img src="assets/images/paatufy-purple.png" alt="Paatufy Logo" width="120" height="120" style="border-radius: 50%;">
 </p>
 
 <p align="center">

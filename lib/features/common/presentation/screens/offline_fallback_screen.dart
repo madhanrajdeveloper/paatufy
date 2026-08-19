@@ -60,13 +60,13 @@ class _OfflineFallbackScreenState extends State<OfflineFallbackScreen> {
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF22C55E).withOpacity(0.12),
+                    color: AppTheme.primary.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.wifi_off_rounded,
                     size: 48,
-                    color: Color(0xFF22C55E),
+                    color: AppTheme.primary,
                   ),
                 ),
                 const SizedBox(height: 28),
@@ -101,7 +101,7 @@ class _OfflineFallbackScreenState extends State<OfflineFallbackScreen> {
                   height: 50,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF22C55E),
+                      backgroundColor: AppTheme.primary,
                       foregroundColor: Colors.black,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
