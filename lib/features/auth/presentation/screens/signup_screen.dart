@@ -164,7 +164,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   height: 50,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF22C55E),
+                      backgroundColor: AppTheme.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     onPressed: authState.isLoading ? null : _handleSignup,
@@ -212,7 +212,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     Text('Already have an account? ', style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 13)),
                     GestureDetector(
                       onTap: () => context.go('/login'),
-                      child: Text('Log In', style: GoogleFonts.poppins(color: const Color(0xFF22C55E), fontWeight: FontWeight.bold, fontSize: 13)),
+                      child: Text('Log In', style: GoogleFonts.poppins(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ],
                 ),

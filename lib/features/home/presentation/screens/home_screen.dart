@@ -1,8 +1,10 @@
 import 'dart:math';
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:paatufy/core/services/app_update_service.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
@@ -223,471 +225,615 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final user = authState.user ?? HiveService.getUserMeta(HiveService.activeUserId);
     final String userInitial = (user != null && user.name.trim().isNotEmpty)
         ? user.name.trim()[0].toUpperCase()
-        : 'U';
+        : 'M';
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        titleSpacing: 16,
-        title: Row(
-          children: [
-            ClipOval(
-              child: Image.asset(
-                'assets/images/paatufy.png',
-                width: 34,
-                height: 34,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.music_note_rounded,
-                  size: 28,
-                  color: Color(0xFF22C55E),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              _getGreeting(),
-              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppTheme.textPrimary),
-            onPressed: () => ref.refresh(homeDiscoveryProvider),
-          ),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
-            },
-            child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              width: 32,
-              height: 32,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [Color(0xFF22C55E), Color(0xFF15803D)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  userInitial,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppTheme.textPrimary),
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
-            },
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
+      body: Stack(
         children: [
-          // 1. Recently Played Shelf
-          ValueListenableBuilder(
-            valueListenable: HiveService.getRecentlyPlayed().listenable(),
-            builder: (context, Box<String> box, _) {
-              final recentItems = HiveService.getActiveRecentlyPlayed().take(8).toList();
-              if (recentItems.isEmpty) return const SizedBox.shrink();
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          // ── Ultra-Smooth Symmetrical Corner Ambient Lighting Layer ──
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 320,
+            child: IgnorePointer(
+              child: Stack(
                 children: [
-                  const SizedBox(height: 8),
-                  const Text('Recently Played', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 165,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: recentItems.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final item = recentItems[index];
-                        return GestureDetector(
-                          onTap: () => _onTapRecentItem(context, item, audioHandler),
-                          child: SizedBox(
-                            width: 110,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(6),
-                                      child: item.artworkUrl != null
-                                          ? CachedNetworkImage(imageUrl: item.artworkUrl!, width: 110, height: 110, fit: BoxFit.cover)
-                                          : Container(width: 110, height: 110, color: AppTheme.surfaceElevated),
-                                    ),
-                                    if (item.type != 'song')
-                                      Positioned(
-                                        bottom: 4,
-                                        left: 4,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                          decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(3)),
-                                          child: Text(
-                                            item.type.toUpperCase(),
-                                            style: const TextStyle(fontSize: 9, color: Color(0xFF22C55E), fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ),
-                                    Positioned(
-                                      top: 2,
-                                      right: 2,
-                                      child: GestureDetector(
-                                        onTap: () => _showRecentlyPlayedOptions(context, item, audioHandler),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)),
-                                          child: const Icon(Icons.more_vert_rounded, size: 16, color: Colors.white),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-                                Text(item.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10)),
-                              ],
-                            ),
+                  // 1. Top-Left Soft Glow Blob
+                  Positioned(
+                    top: -60,
+                    left: -60,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.ambientBlob,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.ambientBlobShadow,
+                            blurRadius: 55,
+                            spreadRadius: 20,
                           ),
-                        );
-                      },
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 18),
+
+                  // 2. Top-Right Soft Glow Blob (Mirrored)
+                  Positioned(
+                    top: -60,
+                    right: -60,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.ambientBlob,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.ambientBlobShadow,
+                            blurRadius: 55,
+                            spreadRadius: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // 3. High-sigma Gaussian blur filter
+                  Positioned.fill(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 75, sigmaY: 75),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+
+                  // 4. Subtle Radial Gradient Tint Overlay
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: AppTheme.topRightCornerGlow,
+                    ),
+                  ),
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: AppTheme.topLeftCornerGlow,
+                    ),
+                  ),
+
+                  // 5. Seamless bottom fade into pure background
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: AppTheme.topVerticalFade,
+                    ),
+                  ),
                 ],
-              );
-            },
+              ),
+            ),
           ),
 
-          // 2. Your Playlists Shelf
-          ValueListenableBuilder<Box<String>>(
-            valueListenable: HiveService.getUserPlaylists().listenable(),
-            builder: (context, box, _) {
-              final userPlaylists = HiveService.getUserPlaylistsList();
-              if (userPlaylists.isEmpty) return const SizedBox.shrink();
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Your Playlists', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      GestureDetector(
-                        onTap: () => SpotifyImportModal.show(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF22C55E).withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
+          // ── Main Scrollable Page Content ──
+          SafeArea(
+            child: ListView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 24),
+              children: [
+                // Top Header Row
+                Row(
+                  children: [
+                    // App Logo with subtle purple glow
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryGlow,
+                            blurRadius: 10,
+                            offset: Offset(0, 3),
                           ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.download_rounded, size: 14, color: Color(0xFF22C55E)),
-                              SizedBox(width: 4),
-                              Text('Import Spotify', style: TextStyle(color: Color(0xFF22C55E), fontSize: 11, fontWeight: FontWeight.bold)),
-                            ],
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/images/Logo-Rounded.png',
+                          width: 36,
+                          height: 36,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Image.asset(
+                            'assets/images/paatufy-purple.png',
+                            width: 36,
+                            height: 36,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: AppTheme.surfaceElevated,
+                              child: const Icon(Icons.music_note_rounded, color: AppTheme.primaryPurple, size: 22),
+                            ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 175,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: userPlaylists.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final playlist = userPlaylists[index];
-                        return GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => UserPlaylistScreen(playlistId: playlist.id)),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      _getGreeting(),
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.refresh_rounded, color: AppTheme.textPrimary, size: 22),
+                      onPressed: () => ref.refresh(homeDiscoveryProvider),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.primary,
+                        ),
+                        child: Center(
+                          child: Text(
+                            userInitial,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: AppTheme.textPrimary,
+                            ),
                           ),
-                          child: SizedBox(
-                            width: 115,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Stack(
-                                  children: [
-                                    PlaylistCollageCover(
-                                      playlist: playlist,
-                                      width: 115,
-                                      height: 115,
-                                      borderRadius: 8,
-                                    ),
-                                    if (playlist.isSpotifyImported)
-                                      Positioned(
-                                        top: 4,
-                                        left: 4,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.85),
-                                            borderRadius: BorderRadius.circular(4),
-                                            border: Border.all(color: const Color(0xFF22C55E), width: 0.5),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.settings_outlined, color: AppTheme.textPrimary, size: 22),
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // ── Shelf 1: Recently Played ──
+                ValueListenableBuilder(
+                  valueListenable: HiveService.getRecentlyPlayed().listenable(),
+                  builder: (context, Box<String> box, _) {
+                    final recentItems = HiveService.getActiveRecentlyPlayed().take(8).toList();
+                    if (recentItems.isEmpty) return const SizedBox.shrink();
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Recently Played',
+                              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                            ),
+                            const Icon(Icons.chevron_right_rounded, color: AppTheme.textSecondary),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 165,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: recentItems.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              final item = recentItems[index];
+                              return GestureDetector(
+                                onTap: () => _onTapRecentItem(context, item, audioHandler),
+                                child: SizedBox(
+                                  width: 110,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Stack(
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: item.artworkUrl != null
+                                                ? CachedNetworkImage(imageUrl: item.artworkUrl!, width: 110, height: 110, fit: BoxFit.cover)
+                                                : Container(width: 110, height: 110, color: AppTheme.surface),
                                           ),
-                                          child: const Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.download_done_rounded, size: 10, color: Color(0xFF22C55E)),
-                                              SizedBox(width: 2),
-                                              Text(
-                                                'SPOTIFY',
-                                                style: TextStyle(fontSize: 8, color: Color(0xFF22C55E), fontWeight: FontWeight.bold),
+                                          if (item.type != 'song')
+                                            Positioned(
+                                              bottom: 4,
+                                              left: 4,
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(3)),
+                                                child: Text(
+                                                  item.type.toUpperCase(),
+                                                  style: const TextStyle(fontSize: 9, color: AppTheme.primaryPurple, fontWeight: FontWeight.bold),
+                                                ),
                                               ),
-                                            ],
+                                            ),
+                                          Positioned(
+                                            top: 2,
+                                            right: 2,
+                                            child: GestureDetector(
+                                              onTap: () => _showRecentlyPlayedOptions(context, item, audioHandler),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(4),
+                                                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)),
+                                                child: const Icon(Icons.more_vert_rounded, size: 16, color: AppTheme.textPrimary),
+                                              ),
+                                            ),
                                           ),
-                                        ),
+                                        ],
                                       ),
+                                      const SizedBox(height: 6),
+                                      Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                                      Text(item.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10)),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    );
+                  },
+                ),
+
+                // ── Shelf 2: Your Playlists ──
+                ValueListenableBuilder<Box<String>>(
+                  valueListenable: HiveService.getUserPlaylists().listenable(),
+                  builder: (context, box, _) {
+                    final userPlaylists = HiveService.getUserPlaylistsList();
+                    if (userPlaylists.isEmpty) return const SizedBox.shrink();
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Your Playlists', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                            GestureDetector(
+                              onTap: () => SpotifyImportModal.show(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryGlow,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.download_rounded, size: 14, color: AppTheme.primaryPurple),
+                                    SizedBox(width: 4),
+                                    Text('Import Spotify', style: TextStyle(color: AppTheme.primaryPurple, fontSize: 11, fontWeight: FontWeight.bold)),
                                   ],
                                 ),
-                                const SizedBox(height: 6),
-                                Text(playlist.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                Text('${playlist.songs.length} songs', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-                              ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 175,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: userPlaylists.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              final playlist = userPlaylists[index];
+                              return GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => UserPlaylistScreen(playlistId: playlist.id)),
+                                ),
+                                child: SizedBox(
+                                  width: 115,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Stack(
+                                        children: [
+                                          PlaylistCollageCover(
+                                            playlist: playlist,
+                                            width: 115,
+                                            height: 115,
+                                            borderRadius: 8,
+                                          ),
+                                          if (playlist.isSpotifyImported)
+                                            Positioned(
+                                              top: 4,
+                                              left: 4,
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black87,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: AppTheme.primary, width: 0.5),
+                                                ),
+                                                child: const Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.download_done_rounded, size: 10, color: AppTheme.primaryPurple),
+                                                    SizedBox(width: 2),
+                                                    Text(
+                                                      'SPOTIFY',
+                                                      style: TextStyle(fontSize: 8, color: AppTheme.primaryPurple, fontWeight: FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(playlist.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                      Text('${playlist.songs.length} songs', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    );
+                  },
+                ),
+
+                // ── Shelf 3: Dynamic Recommendations Feed ──
+                discovery.when(
+                  data: (data) {
+                    final quickPicks = data['quickPicks'] as List<Song>;
+                    final trendingAlbums = data['trendingAlbums'] as List<AlbumSummary>;
+                    final topArtists = data['topArtists'] as List<ArtistSummary>;
+                    final dailyMixes = data['dailyMixes'] as List<PlaylistSummary>;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Quick Picks
+                        if (quickPicks.isNotEmpty) ...[
+                          Text('Quick Picks • Tamil & English', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                          const SizedBox(height: 12),
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                              childAspectRatio: 2.8,
+                            ),
+                            itemCount: quickPicks.length,
+                            itemBuilder: (context, index) {
+                              final song = quickPicks[index];
+                              return GestureDetector(
+                                onTap: () => audioHandler.playSong(song),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.surface,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: const BorderRadius.horizontal(left: Radius.circular(6)),
+                                        child: song.artworkUrl != null
+                                            ? CachedNetworkImage(imageUrl: song.artworkUrl!, width: 52, height: 52, fit: BoxFit.cover)
+                                            : Container(width: 52, height: 52, color: AppTheme.surfaceElevated),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          song.title,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 28),
+                        ],
+
+                        // New Albums
+                        if (trendingAlbums.isNotEmpty) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('New Albums • Tamil & English', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                              const Icon(Icons.chevron_right_rounded, color: AppTheme.textSecondary),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            height: 190,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: trendingAlbums.length,
+                              separatorBuilder: (_, __) => const SizedBox(width: 14),
+                              itemBuilder: (context, index) {
+                                final album = trendingAlbums[index];
+                                return GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => EntityDetailScreen(
+                                        id: album.id,
+                                        title: album.title,
+                                        subtitle: album.artist,
+                                        artworkUrl: album.artworkUrl,
+                                        type: DetailType.album,
+                                      ),
+                                    ),
+                                  ),
+                                  child: SizedBox(
+                                    width: 130,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: album.artworkUrl != null
+                                              ? CachedNetworkImage(imageUrl: album.artworkUrl!, width: 130, height: 130, fit: BoxFit.cover)
+                                              : Container(width: 130, height: 130, color: AppTheme.surface),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(album.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                        Text(album.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                ],
-              );
-            },
-          ),
+                          const SizedBox(height: 28),
+                        ],
 
-          // 3. Dynamic Recommendations Feed with Spotify Shimmer Skeleton
-          discovery.when(
-            data: (data) {
-              final quickPicks = data['quickPicks'] as List<Song>;
-              final trendingAlbums = data['trendingAlbums'] as List<AlbumSummary>;
-              final topArtists = data['topArtists'] as List<ArtistSummary>;
-              final dailyMixes = data['dailyMixes'] as List<PlaylistSummary>;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (quickPicks.isNotEmpty) ...[
-                    const Text('Quick Picks • Tamil & English', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                        childAspectRatio: 2.8,
-                      ),
-                      itemCount: quickPicks.length,
-                      itemBuilder: (context, index) {
-                        final song = quickPicks[index];
-                        return GestureDetector(
-                          onTap: () => audioHandler.playSong(song),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: AppTheme.surfaceElevated,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(6)),
-                                  child: song.artworkUrl != null
-                                      ? CachedNetworkImage(imageUrl: song.artworkUrl!, width: 52, height: 52, fit: BoxFit.cover)
-                                      : Container(width: 52, height: 52, color: AppTheme.surface),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    song.title,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        // Popular Artists
+                        if (topArtists.isNotEmpty) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Popular Artists', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                              const Icon(Icons.chevron_right_rounded, color: AppTheme.textSecondary),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            height: 140,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: topArtists.length,
+                              separatorBuilder: (_, __) => const SizedBox(width: 16),
+                              itemBuilder: (context, index) {
+                                final artist = topArtists[index];
+                                return GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => EntityDetailScreen(
+                                        id: artist.id,
+                                        title: artist.name,
+                                        subtitle: 'Artist',
+                                        artworkUrl: artist.artworkUrl,
+                                        type: DetailType.artist,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(2.0),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: AppTheme.primaryGlow, width: 1.5),
+                                        ),
+                                        child: CircleAvatar(
+                                          radius: 38,
+                                          backgroundColor: AppTheme.surface,
+                                          backgroundImage: artist.artworkUrl != null ? CachedNetworkImageProvider(artist.artworkUrl!) : null,
+                                          child: artist.artworkUrl == null ? const Icon(Icons.person_rounded, color: AppTheme.textSecondary) : null,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      SizedBox(
+                                        width: 85,
+                                        child: Text(
+                                          artist.name,
+                                          textAlign: TextAlign.center,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                           ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 28),
-                  ],
+                          const SizedBox(height: 28),
+                        ],
 
-                  if (trendingAlbums.isNotEmpty) ...[
-                    const Text('New Albums • Tamil & English', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      height: 190,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: trendingAlbums.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 14),
-                        itemBuilder: (context, index) {
-                          final album = trendingAlbums[index];
-                          return GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => EntityDetailScreen(
-                                  id: album.id,
-                                  title: album.title,
-                                  subtitle: album.artist,
-                                  artworkUrl: album.artworkUrl,
-                                  type: DetailType.album,
-                                ),
-                              ),
-                            ),
-                            child: SizedBox(
-                              width: 130,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: album.artworkUrl != null
-                                        ? CachedNetworkImage(imageUrl: album.artworkUrl!, width: 130, height: 130, fit: BoxFit.cover)
-                                        : Container(width: 130, height: 130, color: AppTheme.surfaceElevated),
+                        // Made For You
+                        if (dailyMixes.isNotEmpty) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Made For You • Tamil & English', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                              const Icon(Icons.chevron_right_rounded, color: AppTheme.textSecondary),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            height: 190,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: dailyMixes.length,
+                              separatorBuilder: (_, __) => const SizedBox(width: 14),
+                              itemBuilder: (context, index) {
+                                final playlist = dailyMixes[index];
+                                return GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => EntityDetailScreen(
+                                        id: playlist.id,
+                                        title: playlist.title,
+                                        subtitle: playlist.subtitle ?? 'Playlist',
+                                        artworkUrl: playlist.artworkUrl,
+                                        type: DetailType.playlist,
+                                      ),
+                                    ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(album.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                                  Text(album.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                  ],
-
-                  if (topArtists.isNotEmpty) ...[
-                    const Text('Popular Artists', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      height: 140,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: topArtists.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 16),
-                        itemBuilder: (context, index) {
-                          final artist = topArtists[index];
-                          return GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => EntityDetailScreen(
-                                  id: artist.id,
-                                  title: artist.name,
-                                  subtitle: 'Artist',
-                                  artworkUrl: artist.artworkUrl,
-                                  type: DetailType.artist,
-                                ),
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                CircleAvatar(
-                                  radius: 40,
-                                  backgroundColor: AppTheme.surfaceElevated,
-                                  backgroundImage: artist.artworkUrl != null ? CachedNetworkImageProvider(artist.artworkUrl!) : null,
-                                  child: artist.artworkUrl == null ? const Icon(Icons.person_rounded, color: AppTheme.textSecondary) : null,
-                                ),
-                                const SizedBox(height: 8),
-                                SizedBox(
-                                  width: 85,
-                                  child: Text(
-                                    artist.name,
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                  child: SizedBox(
+                                    width: 130,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: playlist.artworkUrl != null
+                                              ? CachedNetworkImage(imageUrl: playlist.artworkUrl!, width: 130, height: 130, fit: BoxFit.cover)
+                                              : Container(width: 130, height: 130, color: AppTheme.surface),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(playlist.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                        Text('${playlist.trackCount} Tracks', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                  ],
-
-                  if (dailyMixes.isNotEmpty) ...[
-                    const Text('Made For You • Tamil & English', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      height: 190,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: dailyMixes.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 14),
-                        itemBuilder: (context, index) {
-                          final playlist = dailyMixes[index];
-                          return GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => EntityDetailScreen(
-                                  id: playlist.id,
-                                  title: playlist.title,
-                                  subtitle: playlist.subtitle ?? 'Playlist',
-                                  artworkUrl: playlist.artworkUrl,
-                                  type: DetailType.playlist,
-                                ),
-                              ),
-                            ),
-                            child: SizedBox(
-                              width: 130,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: playlist.artworkUrl != null
-                                        ? CachedNetworkImage(imageUrl: playlist.artworkUrl!, width: 130, height: 130, fit: BoxFit.cover)
-                                        : Container(width: 130, height: 130, color: AppTheme.surfaceElevated),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(playlist.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                                  Text('${playlist.trackCount} Tracks', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ],
-              );
-            },
-            loading: () => const HomeFeedSkeleton(),
-            error: (err, _) => const SizedBox.shrink(),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
+                  loading: () => const HomeFeedSkeleton(),
+                  error: (err, _) => const SizedBox.shrink(),
+                ),
+              ],
+            ),
           ),
         ],
       ),

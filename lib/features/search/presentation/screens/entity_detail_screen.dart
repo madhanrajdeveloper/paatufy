@@ -203,7 +203,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                         return IconButton(
                           icon: Icon(
                             isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                            color: isSaved ? const Color(0xFF22C55E) : AppTheme.textSecondary,
+                            color: isSaved ? AppTheme.primary : AppTheme.textSecondary,
                             size: 28,
                           ),
                           onPressed: () {
@@ -228,7 +228,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                         return IconButton(
                           icon: Icon(
                             isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                            color: isSaved ? const Color(0xFF22C55E) : AppTheme.textSecondary,
+                            color: isSaved ? AppTheme.primary : AppTheme.textSecondary,
                             size: 28,
                           ),
                           onPressed: () {
@@ -251,7 +251,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                   IconButton(
                     icon: Icon(
                       Icons.shuffle_rounded,
-                      color: isShuffle ? const Color(0xFF22C55E) : AppTheme.textSecondary,
+                      color: isShuffle ? AppTheme.primary : AppTheme.textSecondary,
                       size: 26,
                     ),
                     onPressed: () {
@@ -265,7 +265,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                   const SizedBox(width: 8),
                   CircleAvatar(
                     radius: 28,
-                    backgroundColor: const Color(0xFF22C55E),
+                    backgroundColor: AppTheme.primary,
                     child: IconButton(
                       icon: Icon(
                         isCurrentlyPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
@@ -326,7 +326,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                                   '${index + 1}',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: isCurrentPlaying ? const Color(0xFF22C55E) : AppTheme.textSecondary,
+                                    color: isCurrentPlaying ? AppTheme.primary : AppTheme.textSecondary,
                                     fontWeight: isCurrentPlaying ? FontWeight.bold : FontWeight.normal,
                                     fontSize: 14,
                                   ),
@@ -337,14 +337,14 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: isCurrentPlaying ? const Color(0xFF22C55E) : AppTheme.textPrimary,
+                            color: isCurrentPlaying ? AppTheme.primary : AppTheme.textPrimary,
                             fontWeight: isCurrentPlaying ? FontWeight.bold : FontWeight.w600,
                           ),
                         ),
                         subtitle: Row(
                           children: [
                             if (isLiked) ...[
-                              const Icon(Icons.favorite_rounded, color: Color(0xFF22C55E), size: 12),
+                              const Icon(Icons.favorite_rounded, color: AppTheme.primary, size: 12),
                               const SizedBox(width: 4),
                             ],
                             Expanded(
@@ -367,7 +367,7 @@ class _EntityDetailScreenState extends ConsumerState<EntityDetailScreen> {
                             IconButton(
                               icon: Icon(
                                 (isCurrentPlaying && isPlaying) ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                                color: isCurrentPlaying ? const Color(0xFF22C55E) : AppTheme.textSecondary,
+                                color: isCurrentPlaying ? AppTheme.primary : AppTheme.textSecondary,
                                 size: 24,
                               ),
                               onPressed: () {

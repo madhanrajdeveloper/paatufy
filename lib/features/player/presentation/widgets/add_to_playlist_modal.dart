@@ -45,7 +45,7 @@ class AddToPlaylistModal extends StatelessWidget {
             child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF22C55E)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
             onPressed: () async {
               if (controller.text.trim().isNotEmpty) {
                 await HiveService.createUserPlaylist(
@@ -107,7 +107,7 @@ class AddToPlaylistModal extends StatelessWidget {
                   color: AppTheme.surface,
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Icon(Icons.add_rounded, color: Color(0xFF22C55E), size: 28),
+                child: const Icon(Icons.add_rounded, color: AppTheme.primary, size: 28),
               ),
               title: const Text('New Playlist', style: TextStyle(fontWeight: FontWeight.bold)),
               onTap: () => _showCreatePlaylistDialog(context),
@@ -162,7 +162,7 @@ class AddToPlaylistModal extends StatelessWidget {
                           style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                         ),
                         trailing: alreadyInPlaylist
-                            ? const Icon(Icons.check_circle_rounded, color: Color(0xFF22C55E), size: 22)
+                            ? const Icon(Icons.check_circle_rounded, color: AppTheme.primary, size: 22)
                             : null,
                         onTap: () async {
                           if (alreadyInPlaylist) {

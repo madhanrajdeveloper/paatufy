@@ -104,10 +104,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF22C55E).withOpacity(0.15),
+                    color: AppTheme.primary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.system_update_rounded, color: Color(0xFF22C55E), size: 28),
+                  child: const Icon(Icons.system_update_rounded, color: AppTheme.primary, size: 28),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -120,7 +120,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                       ),
                       Text(
                         'v${info.latestVersion}',
-                        style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF22C55E), fontWeight: FontWeight.w600),
+                        style: GoogleFonts.poppins(fontSize: 12, color: AppTheme.primary, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -147,7 +147,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
               LinearProgressIndicator(
                 value: _progress > 0 ? _progress : null,
                 backgroundColor: Colors.white.withOpacity(0.08),
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF22C55E)),
+                valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
                 minHeight: 6,
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -186,7 +186,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF22C55E),
+                      backgroundColor: AppTheme.primary,
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(vertical: 12),

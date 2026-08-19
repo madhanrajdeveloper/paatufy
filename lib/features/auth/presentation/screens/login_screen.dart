@@ -71,11 +71,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 12),
                 ClipOval(
                   child: Image.asset(
-                    'assets/images/paatufy.png',
+                    'assets/images/paatufy-purple.png',
                     width: 44,
                     height: 44,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(Icons.music_note_rounded, color: Color(0xFF22C55E), size: 36),
+                    errorBuilder: (_, __, ___) => const Icon(Icons.music_note_rounded, color: AppTheme.primary, size: 36),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -150,7 +150,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   height: 50,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF22C55E),
+                      backgroundColor: AppTheme.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     onPressed: authState.isLoading ? null : _handleEmailLogin,
@@ -198,7 +198,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Text("Don't have an account? ", style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 13)),
                     GestureDetector(
                       onTap: () => context.go('/signup'),
-                      child: Text('Sign Up', style: GoogleFonts.poppins(color: const Color(0xFF22C55E), fontWeight: FontWeight.bold, fontSize: 13)),
+                      child: Text('Sign Up', style: GoogleFonts.poppins(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ],
                 ),

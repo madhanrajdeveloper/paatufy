@@ -21,7 +21,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       'icon': Icons.music_note_rounded,
       'title': 'Unlimited Music,\nZero Ads',
       'desc': 'Stream trending Tamil & English hits with continuous playback and pure high fidelity audio.',
-      'color': const Color(0xFF22C55E),
+      'color': AppTheme.primary,
     },
     {
       'icon': Icons.download_rounded,
@@ -67,15 +67,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     children: [
                       ClipOval(
                         child: Image.asset(
-                          'assets/images/paatufy.png',
+                          'assets/images/paatufy-purple.png',
                           width: 32,
                           height: 32,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.music_note_rounded, color: Color(0xFF22C55E)),
+                          errorBuilder: (_, __, ___) => const Icon(Icons.music_note_rounded, color: AppTheme.primary),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text('Paatufy', style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 18, color: const Color(0xFF22C55E))),
+                      Text('Paatufy', style: GoogleFonts.poppins(fontWeight: FontWeight.w900, fontSize: 18, color: AppTheme.primary)),
                     ],
                   ),
                   TextButton(
@@ -141,7 +141,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     width: active ? 24 : 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: active ? const Color(0xFF22C55E) : AppTheme.surfaceElevated,
+                      color: active ? AppTheme.primary : AppTheme.surfaceElevated,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   );
@@ -155,7 +155,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 height: 52,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF22C55E),
+                    backgroundColor: AppTheme.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {

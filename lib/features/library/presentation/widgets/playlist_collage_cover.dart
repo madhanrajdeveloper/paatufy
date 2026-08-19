@@ -125,7 +125,7 @@ class PlaylistCollageCover extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
         gradient: const LinearGradient(
-          colors: [Color(0xFF15803D), Color(0xFF22C55E)],
+          colors: [Color(0xFF15803D), AppTheme.primary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
