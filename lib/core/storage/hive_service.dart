@@ -5,6 +5,7 @@ import 'package:paatufy/models/search_result.dart';
 import 'package:paatufy/models/song.dart';
 import 'package:paatufy/models/user_model.dart';
 import 'package:paatufy/models/user_playlist.dart';
+import 'package:path_provider/path_provider.dart';
 
 class RecentlyPlayedItem {
   final String id;
@@ -62,11 +63,15 @@ class HiveService {
   static const int sixHoursMs = 6 * 60 * 60 * 1000;
 
   static Future<void> init() async {
-    await Hive.initFlutter();
+    // 1. Lock the persistent app storage directory across in-place app updates
+    final appDocDir = await getApplicationDocumentsDirectory();
+    await Hive.initFlutter(appDocDir.path);
+
     if (!Hive.isAdapterRegistered(0)) {
       Hive.registerAdapter(SongAdapter());
     }
 
+    // 2. Open Global Auth & Meta Boxes
     if (!Hive.isBoxOpen(authSessionBox)) {
       await Hive.openBox<String>(authSessionBox);
     }
@@ -74,14 +79,17 @@ class HiveService {
       await Hive.openBox<String>(usersMetaBox);
     }
 
+    // 3. Restore persisted User ID
     final sessionBox = Hive.box<String>(authSessionBox);
     final savedUserId = sessionBox.get('current_user_id');
-    final savedToken = sessionBox.get('auth_token');
 
-    if (savedUserId != null && savedToken != null && savedUserId.isNotEmpty) {
-      activeUserId = savedUserId;
+    if (savedUserId != null && savedUserId.trim().isNotEmpty) {
+      activeUserId = savedUserId.trim();
+    } else {
+      activeUserId = 'guest';
     }
 
+    // 4. Open current user-scoped storage boxes
     await _openUserScopedBoxes(activeUserId);
     cleanExpiredRecentlyPlayed();
   }
