@@ -16,5 +16,6 @@
     "1.1.4": "• Fixed the shuffle playback issue for some devices.\n• Fixed the background playback issue for some devices.",
     "1.1.5": "• Fixed the background playback issue for some devices.\n• Fixed the shuffle playback issue for some devices.\n• Fixed the crash issue for some devices.",
     "1.1.6": "• Overall Color Theme Changed to New Look.",
-    "1.1.7": "• Fixed the library reset bug after an app update."
+    "1.1.7": "• Fixed the library reset bug after an app update.",
+    "1.1.8": "• Introduced Real-time Synced Lyrics with Spotify-style Karaoke.\n• Added musical beat interludes and animated instrumental indicators.\n• Added animated equalizer visualizer fallback when lyrics are unavailable."
 }
