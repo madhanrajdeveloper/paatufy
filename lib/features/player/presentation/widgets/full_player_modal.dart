@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:paatufy/core/storage/hive_service.dart';
@@ -8,6 +9,7 @@ import 'package:paatufy/core/theme/app_theme.dart';
 import 'package:paatufy/features/audio/presentation/controllers/player_controller.dart';
 import 'package:paatufy/features/player/presentation/widgets/equalizer_visualizer.dart';
 import 'package:paatufy/features/player/presentation/widgets/queue_modal.dart';
+import 'package:paatufy/features/player/presentation/widgets/realtime_lyrics_view.dart';
 import 'package:paatufy/features/player/presentation/widgets/sleep_timer_modal.dart';
 import 'package:paatufy/features/player/presentation/widgets/song_options_modal.dart';
 import 'package:paatufy/models/song.dart';
@@ -31,6 +33,7 @@ class FullPlayerModal extends ConsumerStatefulWidget {
 
 class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
   double? _dragPosition;
+  bool _showLyrics = false;
 
   String _formatDuration(Duration d) {
     final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
@@ -69,6 +72,20 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
 
     if (mediaItem == null) return const SizedBox.shrink();
 
+    final currentSong = audioHandler.currentSong ??
+        Song(
+          id: mediaItem.id,
+          provider: mediaItem.id.startsWith('audius_') ? 'Audius' : 'JioSaavn',
+          providerId: mediaItem.id.replaceAll('saavn_', '').replaceAll('audius_', ''),
+          title: mediaItem.title,
+          artist: mediaItem.artist ?? 'Various Artists',
+          album: mediaItem.album,
+          artworkUrl: mediaItem.artUri?.toString(),
+          durationSeconds: mediaItem.duration?.inSeconds ?? 0,
+        );
+
+    final artworkDimension = MediaQuery.of(context).size.width * 0.78;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
@@ -91,9 +108,9 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          'PLAYING FROM PLAYLIST',
-                          style: TextStyle(
+                        Text(
+                          _showLyrics ? 'LYRICS' : 'PLAYING FROM PLAYLIST',
+                          style: GoogleFonts.poppins(
                             color: AppTheme.textSecondary,
                             fontSize: 10,
                             letterSpacing: 1.2,
@@ -105,71 +122,84 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
                           mediaItem.album ?? 'Paatufy Stream',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                          style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.more_vert_rounded, color: AppTheme.textPrimary),
-                    onPressed: () {
-                      final currentSong = audioHandler.currentSong;
-                      final songToOption = currentSong != null
-                          ? currentSong.copyWith()
-                          : Song(
-                              id: mediaItem.id,
-                              provider: mediaItem.id.startsWith('audius_') ? 'Audius' : 'JioSaavn',
-                              providerId: mediaItem.id.replaceAll('saavn_', '').replaceAll('audius_', ''),
-                              title: mediaItem.title,
-                              artist: mediaItem.artist ?? 'Various Artists',
-                              album: mediaItem.album,
-                              artworkUrl: mediaItem.artUri?.toString(),
-                              durationSeconds: mediaItem.duration?.inSeconds ?? 0,
-                            );
-                      SongOptionsModal.show(context, songToOption, audioHandler);
-                    },
+                    onPressed: () => SongOptionsModal.show(context, currentSong, audioHandler),
                   ),
                 ],
               ),
 
-              // 2. Artwork Canvas
-              Center(
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.82,
-                  height: MediaQuery.of(context).size.width * 0.82,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.55),
-                        blurRadius: 28,
-                        spreadRadius: 4,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: mediaItem.artUri != null
-                        ? CachedNetworkImage(
-                            imageUrl: mediaItem.artUri.toString(),
-                            width: MediaQuery.of(context).size.width * 0.82,
-                            height: MediaQuery.of(context).size.width * 0.82,
-                            fit: BoxFit.cover,
-                            errorWidget: (_, __, ___) => Container(
-                              color: AppTheme.surfaceElevated,
-                              child: const Icon(Icons.music_note_rounded, size: 80, color: AppTheme.textSecondary),
+              // 2. Central Stage: Album Art OR Realtime Karaoke Synced Lyrics
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 320),
+                    firstCurve: Curves.easeInOutCubic,
+                    secondCurve: Curves.easeInOutCubic,
+                    crossFadeState: _showLyrics ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                    
+                    // Front Canvas: Album Cover
+                    firstChild: Center(
+                      child: Container(
+                        width: artworkDimension,
+                        height: artworkDimension,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primary.withValues(alpha: 0.20),
+                              blurRadius: 36,
+                              spreadRadius: 6,
+                              offset: const Offset(0, 10),
                             ),
-                          )
-                        : Container(
-                            color: AppTheme.surfaceElevated,
-                            child: const Icon(Icons.music_note_rounded, size: 80, color: AppTheme.textSecondary),
-                          ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: mediaItem.artUri != null
+                              ? CachedNetworkImage(
+                                  imageUrl: mediaItem.artUri.toString(),
+                                  width: artworkDimension,
+                                  height: artworkDimension,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, __, ___) => Container(
+                                    color: AppTheme.surfaceElevated,
+                                    child: const Icon(Icons.music_note_rounded, size: 80, color: AppTheme.textSecondary),
+                                  ),
+                                )
+                              : Container(
+                                  color: AppTheme.surfaceElevated,
+                                  child: const Icon(Icons.music_note_rounded, size: 80, color: AppTheme.textSecondary),
+                                ),
+                        ),
+                      ),
+                    ),
+
+                    // Back Canvas: Spotify Karaoke Real-time Lyrics
+                    secondChild: Container(
+                      height: MediaQuery.of(context).size.height * 0.44,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: AppTheme.surface.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppTheme.divider, width: 0.8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: RealtimeLyricsView(song: currentSong),
+                      ),
+                    ),
                   ),
                 ),
               ),
 
-              // 3. Track Info, Equalizer & Like Action
+              // 3. Track Info, Equalizer, Like Action & Lyrics Switcher
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -184,23 +214,38 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
                                 mediaItem.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                style: GoogleFonts.poppins(fontSize: 19, fontWeight: FontWeight.bold),
                               ),
                             ),
                             const SizedBox(width: 8),
                             EqualizerVisualizer(isPlaying: isPlaying, size: 16),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           mediaItem.artist ?? 'Various Artists',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                          style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 13),
                         ),
                       ],
                     ),
                   ),
+                  
+                  // Real-time Lyrics quick-toggle button
+                  IconButton(
+                    icon: Icon(
+                      Icons.lyrics_rounded,
+                      color: _showLyrics ? AppTheme.primaryPurple : AppTheme.textSecondary,
+                      size: 26,
+                    ),
+                    tooltip: 'Toggle Lyrics',
+                    onPressed: () {
+                      setState(() => _showLyrics = !_showLyrics);
+                    },
+                  ),
+
+                  // Like button
                   ValueListenableBuilder<Box<Song>>(
                     valueListenable: HiveService.getLikedSongs().listenable(),
                     builder: (context, Box<Song> likedBox, _) {
@@ -213,20 +258,7 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
                           size: 26,
                         ),
                         onPressed: () async {
-                          final current = audioHandler.currentSong;
-                          final songToSave = current != null
-                              ? current.copyWith()
-                              : Song(
-                                  id: mediaItem.id,
-                                  provider: mediaItem.id.startsWith('audius_') ? 'Audius' : 'JioSaavn',
-                                  providerId: mediaItem.id.replaceAll('saavn_', '').replaceAll('audius_', ''),
-                                  title: mediaItem.title,
-                                  artist: mediaItem.artist ?? 'Various Artists',
-                                  album: mediaItem.album,
-                                  artworkUrl: mediaItem.artUri?.toString(),
-                                  durationSeconds: mediaItem.duration?.inSeconds ?? 0,
-                                );
-                          await HiveService.toggleLikeSong(songToSave);
+                          await HiveService.toggleLikeSong(currentSong);
                         },
                       );
                     },
@@ -234,7 +266,7 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
                 ],
               ),
 
-              // 4. Progress Bar & Timestamps
+              // 4. Progress Slider & Timestamps
               Column(
                 children: [
                   SliderTheme(
@@ -243,9 +275,9 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
                       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                       overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
                       activeTrackColor: AppTheme.primary,
-                      inactiveTrackColor: Colors.white.withOpacity(0.12),
+                      inactiveTrackColor: Colors.white.withValues(alpha: 0.12),
                       thumbColor: Colors.white,
-                      overlayColor: AppTheme.primary.withOpacity(0.2),
+                      overlayColor: AppTheme.primaryGlow,
                     ),
                     child: Slider(
                       value: currentVal,
@@ -271,11 +303,11 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
                                 ? Duration(milliseconds: _dragPosition!.toInt())
                                 : position,
                           ),
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                          style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 11),
                         ),
                         Text(
                           _formatDuration(totalDuration),
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                          style: GoogleFonts.poppins(color: AppTheme.textSecondary, fontSize: 11),
                         ),
                       ],
                     ),
@@ -290,7 +322,7 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
                   IconButton(
                     icon: Icon(
                       Icons.shuffle_rounded,
-                      color: isShuffle ? AppTheme.primary : AppTheme.textSecondary,
+                      color: isShuffle ? AppTheme.primaryPurple : AppTheme.textSecondary,
                       size: 24,
                     ),
                     onPressed: audioHandler.toggleShuffle,
@@ -311,7 +343,7 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
                       child: Center(
                         child: Icon(
                           isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                          color: Colors.black,
+                          color: Colors.white,
                           size: 38,
                         ),
                       ),
@@ -324,7 +356,7 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
                   IconButton(
                     icon: Icon(
                       loopMode == LoopMode.one ? Icons.repeat_one_rounded : Icons.repeat_rounded,
-                      color: loopMode != LoopMode.off ? AppTheme.primary : AppTheme.textSecondary,
+                      color: loopMode != LoopMode.off ? AppTheme.primaryPurple : AppTheme.textSecondary,
                       size: 24,
                     ),
                     onPressed: audioHandler.toggleRepeatMode,
@@ -338,19 +370,19 @@ class _FullPlayerModalState extends ConsumerState<FullPlayerModal> {
                 children: [
                   TextButton.icon(
                     style: TextButton.styleFrom(
-                      backgroundColor: sleepTimer != null ? AppTheme.primary.withOpacity(0.15) : Colors.transparent,
+                      backgroundColor: sleepTimer != null ? AppTheme.primaryGlow : Colors.transparent,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
                     icon: Icon(
                       Icons.timer_outlined,
                       size: 18,
-                      color: sleepTimer != null ? AppTheme.primary : AppTheme.textSecondary,
+                      color: sleepTimer != null ? AppTheme.primaryPurple : AppTheme.textSecondary,
                     ),
                     label: Text(
                       sleepTimer != null ? _formatSleepClock(sleepTimer) : 'Timer',
-                      style: TextStyle(
-                        color: sleepTimer != null ? AppTheme.primary : AppTheme.textSecondary,
+                      style: GoogleFonts.poppins(
+                        color: sleepTimer != null ? AppTheme.primaryPurple : AppTheme.textSecondary,
                         fontSize: 12,
                         fontWeight: sleepTimer != null ? FontWeight.bold : FontWeight.normal,
                       ),
